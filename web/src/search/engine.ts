@@ -95,6 +95,17 @@ function scoreSatelliteToken(d: SatelliteDoc, tok: string): number {
   return best;
 }
 
+/** AND 语义：每个 token 都要中，有一个不中就整条淘汰（返回 0）。 */
+function scoreAll(tokens: string[], score: (tok: string) => number): number {
+  let total = 0;
+  for (const tok of tokens) {
+    const s = score(tok);
+    if (s === 0) return 0;
+    total += s;
+  }
+  return total;
+}
+
 export function search(index: SearchIndex, query: string, limit = 50): SearchResult[] {
   const board = asBoardNumber(query);
   if (board) {
@@ -108,12 +119,7 @@ export function search(index: SearchIndex, query: string, limit = 50): SearchRes
   const out: SearchResult[] = [];
 
   for (const d of index.papers) {
-    let total = 0;
-    for (const tok of tokens) {
-      const s = scorePaperToken(d, tok);
-      if (s === 0) { total = 0; break; }   // AND: 有一个 token 不中就整条淘汰
-      total += s;
-    }
+    let total = scoreAll(tokens, (tok) => scorePaperToken(d, tok));
     if (total > 0) {
       // 整串出现在标题里给一次强加成，让完整标题查询排到最前
       if (d.title.includes(fold(query))) total += 400;
@@ -122,12 +128,7 @@ export function search(index: SearchIndex, query: string, limit = 50): SearchRes
   }
 
   for (const d of index.satellite) {
-    let total = 0;
-    for (const tok of tokens) {
-      const s = scoreSatelliteToken(d, tok);
-      if (s === 0) { total = 0; break; }
-      total += s;
-    }
+    const total = scoreAll(tokens, (tok) => scoreSatelliteToken(d, tok));
     if (total > 0) out.push({ kind: 'satellite', event: d.event, score: total });
   }
 

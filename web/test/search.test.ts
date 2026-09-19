@@ -56,6 +56,9 @@ describe('search', () => {
     const r = search(index, 'STACOM', 10);
     expect(r[0].kind).toBe('satellite');
   });
+  it('applies AND semantics to satellite events too', () => {
+    expect(search(index, 'STACOM zzzznotaword', 20)).toHaveLength(0);
+  });
   it('returns nothing for an empty query', () => {
     expect(search(index, '   ', 10)).toHaveLength(0);
   });
