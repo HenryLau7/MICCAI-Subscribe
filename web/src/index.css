@@ -1,1 +1,47 @@
 @import "tailwindcss";
+
+:root {
+  color-scheme: light dark;
+  --bg: #fafafa;
+  --bg-elevated: #ffffff;
+  --fg: #18181b;
+  --fg-muted: #52525b;
+  --border: #e4e4e7;
+  --accent: #7c3aed;
+  --accent-fg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0b0d;
+    --bg-elevated: #18181b;
+    --fg: #f4f4f5;
+    --fg-muted: #a1a1aa;
+    --border: #2c2c31;
+    --accent: #a78bfa;
+    --accent-fg: #18181b;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* Nothing important behind hover-only affordances, but keep transitions calm. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,33 +1,50 @@
-import { useEffect, useState } from 'react';
-import { loadProgram } from './data/load';
-import type { Program } from './data/types';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { StoreProvider } from './store/StoreProvider';
+import { ProgramProvider } from './ui/ProgramContext';
+import { BottomNav } from './ui/BottomNav';
+import { Footer } from './ui/Footer';
+import { Home } from './routes/Home';
+import { SearchResults } from './routes/SearchResults';
+import { About } from './routes/About';
+
+/** Placeholder for routes another task will build out; keeps bottom-nav links from going blank. */
+function ComingSoon({ label }: { label: string }) {
+  return (
+    <div className="mx-auto max-w-xl px-4 py-16 text-center">
+      <h1 className="text-lg font-semibold text-[var(--fg)]">{label}</h1>
+      <p className="mt-2 text-sm text-[var(--fg-muted)]">This section isn&rsquo;t built yet — check back soon.</p>
+    </div>
+  );
+}
+
+function AppShell() {
+  return (
+    <div className="flex min-h-dvh flex-col bg-[var(--bg)] text-[var(--fg)]">
+      <main className="flex-1 pb-24">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/schedule" element={<ComingSoon label="Schedule" />} />
+          <Route path="/satellite" element={<ComingSoon label="Satellite events" />} />
+          <Route path="/about" element={<About />} />
+          <Route path="*" element={<ComingSoon label="Not found" />} />
+        </Routes>
+        <Footer />
+      </main>
+      <BottomNav />
+    </div>
+  );
+}
 
 function App() {
-  const [program, setProgram] = useState<Program | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadProgram().then(setProgram).catch((err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err));
-    });
-  }, []);
-
-  if (error) return <p>Failed to load program: {error}</p>;
-  if (!program) return <p>Loading program…</p>;
-
   return (
-    <div>
-      <h1>{program.meta.conference}</h1>
-      <p>Source revision: {program.meta.sourceRevision}</p>
-      <ul>
-        <li>Papers: {program.papers.length}</li>
-        <li>Presentations: {program.presentations.length}</li>
-        <li>Sessions: {program.sessions.size}</li>
-        <li>Satellite events: {program.satellite.length}</li>
-        <li>Authors: {program.authors.size}</li>
-        <li>Affiliations: {program.affiliations.size}</li>
-      </ul>
-    </div>
+    <BrowserRouter>
+      <StoreProvider>
+        <ProgramProvider>
+          <AppShell />
+        </ProgramProvider>
+      </StoreProvider>
+    </BrowserRouter>
   );
 }
 
