@@ -11,9 +11,15 @@ export async function loadProgram(): Promise<Program> {
 
   const cached = await cache?.match(DATA_URL).catch(() => undefined);
   if (cached) {
-    const program = decodeProgram((await cached.json()) as MinBundle);
-    void revalidate(cache);
-    return program;
+    try {
+      const program = decodeProgram((await cached.json()) as MinBundle);
+      void revalidate(cache);
+      return program;
+    } catch {
+      // Corrupted body, or a stale pre-schema-bump bundle decodeProgram rejects:
+      // evict the bad entry so this doesn't repeat, and fall through to the network.
+      try { await cache?.delete(DATA_URL); } catch { /* ignore */ }
+    }
   }
 
   const res = await fetch(DATA_URL);
