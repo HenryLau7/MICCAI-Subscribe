@@ -55,6 +55,9 @@ describe('SatelliteCard', () => {
 // BIC-MAC — challenge, theme "Responsible AI", room "Berlin"
 const CDMRI = program.satellite.find((e) => e.acronym === 'CDMRI')!;
 const BICMAC = program.satellite.find((e) => e.acronym === 'BIC-MAC')!;
+// A real 2026-10-01-only fixture, so "day 2 actually has content" can be
+// asserted positively rather than inferred from "day 1's event is gone".
+const IMFUSION = program.satellite.find((e) => e.acronym === 'ImFusion-SDK')!;
 
 async function renderSatellite() {
   render(
@@ -82,19 +85,40 @@ describe('Satellite page', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders both conference bookend days as tabs, both non-empty', async () => {
+  it('renders both conference bookend days as tabs, each with a positive, correct event count', async () => {
     await renderSatellite();
     const tabs = screen.getAllByRole('tab');
     const labels = tabs.map((t) => t.textContent ?? '');
-    expect(labels.some((l) => /27/.test(l))).toBe(true);
-    expect(labels.some((l) => /1/.test(l) && !/27/.test(l))).toBe(true);
+    const day1Tab = labels.find((l) => /27/.test(l));
+    const day2Tab = labels.find((l) => /1/.test(l) && !/27/.test(l));
+    expect(day1Tab).toBeDefined();
+    expect(day2Tab).toBeDefined();
+    // Real counts from the decoded bundle (58 and 53) — a regression that
+    // silently emptied one day would still pass a "label exists" check, so
+    // assert the count each label carries is both positive and matches the
+    // real per-day total, not just present.
+    const day1Count = program.satellite.filter((e) => e.start.startsWith('2026-09-27')).length;
+    const day2Count = program.satellite.filter((e) => e.start.startsWith('2026-10-01')).length;
+    expect(day1Count).toBeGreaterThan(0);
+    expect(day2Count).toBeGreaterThan(0);
+    expect(day1Tab).toContain(String(day1Count));
+    expect(day2Tab).toContain(String(day2Count));
   });
 
-  it('switching the day tab changes which events are visible', async () => {
+  it('switching the day tab changes which events are visible, and day 2 actually renders its own events', async () => {
     await renderSatellite();
-    // Day 1 (2026-09-27) tab is selected by default; CDMRI (day 1) is visible.
+    // Day 1 (2026-09-27) tab is selected by default; CDMRI (day 1) is visible,
+    // and ImFusion-SDK (day 2 only) is not — proves the default view isn't
+    // accidentally showing everything.
     expect(screen.getByText('CDMRI')).toBeInTheDocument();
+    expect(screen.queryByText(IMFUSION.acronym)).not.toBeInTheDocument();
+
     fireEvent.click(screen.getByRole('tab', { name: /thu|10-01|1\b/i }));
+
+    // Positive assertion first: day 2 must actually render a real day-2
+    // event, not just "not day 1's event" — the latter would pass even if
+    // day 2 rendered nothing at all.
+    expect(screen.getByText(IMFUSION.acronym)).toBeInTheDocument();
     expect(screen.queryByText('CDMRI')).not.toBeInTheDocument();
   });
 
@@ -129,6 +153,27 @@ describe('Satellite page', () => {
     expect(gridIds).toBeGreaterThan(0);
     // And the same specific event is present in both views.
     expect(screen.getByText('CDMRI')).toBeInTheDocument();
+  });
+
+  it('keeps a correct heading hierarchy in grid view — h1 then h2 then h3, never skipping a level', async () => {
+    // List view already goes h1 (page) -> h2 (per time-slot group) -> h3
+    // (SatelliteCard). Grid view renders cards straight into table cells
+    // with no intervening heading, which would jump h1 -> h3 for a
+    // screen-reader user navigating by heading level (WCAG 2.4.6).
+    await renderSatellite();
+    fireEvent.click(screen.getByRole('button', { name: /grid/i }));
+    expect(screen.getByRole('heading', { level: 2, name: /room grid/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 3 }).length).toBeGreaterThan(0);
+    // No level jump anywhere on the page: every heading level present must
+    // be reachable from 1 by steps of at most 1.
+    const levels = screen
+      .getAllByRole('heading')
+      .map((h) => Number(h.tagName.slice(1)))
+      .sort((a, b) => a - b);
+    const distinctLevels = [...new Set(levels)];
+    for (let i = 1; i < distinctLevels.length; i++) {
+      expect(distinctLevels[i] - distinctLevels[i - 1]).toBeLessThanOrEqual(1);
+    }
   });
 
   it('renders the room grid inside a bounded, horizontally scrollable region (no page-level overflow)', async () => {

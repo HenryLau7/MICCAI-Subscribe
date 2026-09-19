@@ -242,55 +242,58 @@ export function Satellite() {
             </div>
           ))
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
-            <table className="w-full border-collapse text-left">
-              <caption className="sr-only">
-                Satellite event room grid for {DAY_LABEL[day]}, rooms by row and time slots by column
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col" className="sticky left-0 min-w-[9rem] border-b border-r border-[var(--border)] bg-[var(--bg-elevated)] p-2 text-xs font-semibold text-[var(--fg-muted)]">
-                    Room
-                  </th>
-                  {SLOTS.map((s) => (
-                    <th
-                      key={s.start}
-                      scope="col"
-                      className="min-w-[14rem] border-b border-[var(--border)] bg-[var(--bg-elevated)] p-2 text-xs font-semibold text-[var(--fg-muted)]"
-                    >
-                      {s.start}–{s.end}
+          <div className="flex flex-col gap-2">
+            <h2 className="sr-only">Room grid — {DAY_LABEL[day]}</h2>
+            <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+              <table className="w-full border-collapse text-left">
+                <caption className="sr-only">
+                  Satellite event room grid for {DAY_LABEL[day]}, rooms by row and time slots by column
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col" className="sticky left-0 min-w-[9rem] border-b border-r border-[var(--border)] bg-[var(--bg-elevated)] p-2 text-xs font-semibold text-[var(--fg-muted)]">
+                      Room
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rooms.map((room) => (
-                  <tr key={room}>
-                    <th
-                      scope="row"
-                      className="sticky left-0 min-w-[9rem] border-b border-r border-[var(--border)] bg-[var(--bg-elevated)] p-2 align-top text-xs font-semibold text-[var(--fg)]"
-                    >
-                      {room}
-                    </th>
-                    {SLOTS.map((s) => {
-                      const cellEvents = eventsStartingAt(room, s, filtered);
-                      return (
-                        <td
-                          key={s.start}
-                          className="min-w-[14rem] border-b border-[var(--border)] p-2 align-top"
-                        >
-                          <div className="flex flex-col gap-2">
-                            {cellEvents.map((e) => (
-                              <SatelliteCard key={e.id} event={e} />
-                            ))}
-                          </div>
-                        </td>
-                      );
-                    })}
+                    {SLOTS.map((s) => (
+                      <th
+                        key={s.start}
+                        scope="col"
+                        className="min-w-[14rem] border-b border-[var(--border)] bg-[var(--bg-elevated)] p-2 text-xs font-semibold text-[var(--fg-muted)]"
+                      >
+                        {s.start}–{s.end}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rooms.map((room) => (
+                    <tr key={room}>
+                      <th
+                        scope="row"
+                        className="sticky left-0 min-w-[9rem] border-b border-r border-[var(--border)] bg-[var(--bg-elevated)] p-2 align-top text-xs font-semibold text-[var(--fg)]"
+                      >
+                        {room}
+                      </th>
+                      {SLOTS.map((s) => {
+                        const cellEvents = eventsStartingAt(room, s, filtered);
+                        return (
+                          <td
+                            key={s.start}
+                            className="min-w-[14rem] border-b border-[var(--border)] p-2 align-top"
+                          >
+                            <div className="flex flex-col gap-2">
+                              {cellEvents.map((e) => (
+                                <SatelliteCard key={e.id} event={e} />
+                              ))}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </section>
