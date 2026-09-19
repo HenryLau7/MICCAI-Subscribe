@@ -9,6 +9,15 @@
   --border: #e4e4e7;
   --accent: #7c3aed;
   --accent-fg: #ffffff;
+  /* Conflict tiers (Schedule page): hard = must-choose-between, soft = partial
+     overlap, neither is used for same-poster-session — that tier reads with
+     --fg-muted/--border, the same neutral tokens as everything else. */
+  --danger: #b91c1c;
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+  --warning: #92400e;
+  --warning-bg: #fffbeb;
+  --warning-border: #fde68a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,6 +29,12 @@
     --border: #2c2c31;
     --accent: #a78bfa;
     --accent-fg: #18181b;
+    --danger: #fca5a5;
+    --danger-bg: #2a1010;
+    --danger-border: #5c1f1f;
+    --warning: #fcd34d;
+    --warning-bg: #2a2008;
+    --warning-border: #5c4a1f;
   }
 }
 
