@@ -242,13 +242,18 @@ describe('Schedule page', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllEnvs();
   });
 
-  it('pins "today" to Europe/Paris regardless of the device timezone (23:30 Paris on conference day 1)', async () => {
+  it('pins "today" to Europe/Paris regardless of the device timezone (TZ=Asia/Shanghai, 23:30 Paris on conference day 1)', async () => {
     // At 2026-09-28T21:30:00Z it's 23:30 in Paris (still day 1), but a naive
     // device-local "today" under an eastern timezone would already read
-    // 2026-09-29. Only Date is faked (not setTimeout) so React Testing
-    // Library's own async polling still runs normally.
+    // 2026-09-29. TZ is pinned *inside the test* via vi.stubEnv — this must
+    // hold regardless of what TZ the invoking shell (or CI runner) has, not
+    // merely when this file happens to be run under one out-of-band. Only
+    // Date is faked (not setTimeout) so React Testing Library's own async
+    // polling still runs normally.
+    vi.stubEnv('TZ', 'Asia/Shanghai');
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-09-28T21:30:00Z'));
 
@@ -256,7 +261,12 @@ describe('Schedule page', () => {
     expect(selectedTabLabel()).toBe('day-tab-2026-09-28');
   });
 
-  it('pins "today" to Europe/Paris under Pacific/Kiritimati too', async () => {
+  it('pins "today" to Europe/Paris regardless of the device timezone (TZ=Pacific/Kiritimati, 23:30 Paris on conference day 1)', async () => {
+    // Same case as above, but under the project's other named TZ
+    // (Pacific/Kiritimati, UTC+14 — one of the furthest-ahead timezones that
+    // exists), so the two tests pin genuinely different device timezones
+    // rather than both defaulting to whatever TZ the invoking shell has.
+    vi.stubEnv('TZ', 'Pacific/Kiritimati');
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-09-28T21:30:00Z'));
 
@@ -308,16 +318,46 @@ describe('Schedule page', () => {
     expect(selectedTabLabel()).toBe('day-tab-2026-09-29');
   });
 
-  it('does not offer an exclude control on a bookmarked row, and offers one on a follow-derived row', async () => {
+  it('does not offer an exclude control on a bookmarked row, and offers one on a genuinely follow-derived row on the same day', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-09-28T09:00:00Z'));
-    await renderSchedule({ ...defaultState(), bookmarks: ['M-PM-001'], followedAuthors: ['yuan-xue'] });
-
     // M-PM-001 is authored by yuan-xue but also explicitly bookmarked — the
-    // bookmark must win as the source (per collect() in schedule.ts), so
-    // this row must show no exclude control and no follow-source label.
+    // bookmark must win as the source (per collect() in schedule.ts). Also
+    // follow yiqiang-zhan, a co-author (never presenter) on M-PM-002, a
+    // *different* day-1 poster nobody bookmarked — that row is genuinely
+    // follow-derived, so both branches of ScheduleItemRow's trailing control
+    // are actually exercised in this test, not just asserted-absent on one.
+    await renderSchedule({
+      ...defaultState(),
+      bookmarks: ['M-PM-001'],
+      followedAuthors: ['yuan-xue', 'yiqiang-zhan'],
+    });
+
     const panel = screen.getByRole('tabpanel');
-    expect(within(panel).queryByRole('button', { name: /exclude/i })).not.toBeInTheDocument();
-    expect(within(panel).queryByText(/from your follow/i)).not.toBeInTheDocument();
+    const bookmarkedPaper = program.byPaperId.get('M-PM-001')!;
+    const followedPaper = program.byPaperId.get('M-PM-002')!;
+
+    // Positive: both rows are actually present. Without this, a bug that
+    // dropped the bookmarked item from the schedule entirely (e.g. wrongly
+    // applying the exclusion check to a bookmark — the exact Task 4 bug
+    // collect() guards against) would leave every "absent" assertion below
+    // vacuously true.
+    const bookmarkedRow = within(panel).getByText(bookmarkedPaper.title).closest('li')!;
+    const followedRow = within(panel).getByText(followedPaper.title).closest('li')!;
+    expect(bookmarkedRow).toBeInTheDocument();
+    expect(followedRow).toBeInTheDocument();
+
+    // Bookmarked row: reachable remove-bookmark control, no exclude, no
+    // follow-source label.
+    expect(within(bookmarkedRow).getByRole('button', { name: /remove bookmark/i })).toBeInTheDocument();
+    expect(within(bookmarkedRow).queryByRole('button', { name: /exclude/i })).not.toBeInTheDocument();
+    expect(within(bookmarkedRow).queryByText(/from your follow/i)).not.toBeInTheDocument();
+
+    // Follow-derived row: source label, exclude control, and the bookmark
+    // star must read "Bookmark" (off) rather than "Remove bookmark".
+    expect(within(followedRow).getByText(/from your follow: yiqiang zhan/i)).toBeInTheDocument();
+    expect(within(followedRow).getByRole('button', { name: /exclude/i })).toBeInTheDocument();
+    expect(within(followedRow).getByRole('button', { name: /^bookmark$/i })).toBeInTheDocument();
+    expect(within(followedRow).queryByRole('button', { name: /remove bookmark/i })).not.toBeInTheDocument();
   });
 });
