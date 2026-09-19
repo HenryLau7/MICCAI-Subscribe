@@ -5,8 +5,6 @@ import { FollowButton } from '../ui/FollowButton';
 import { PaperCard } from '../ui/PaperCard';
 import type { Paper } from '../data/types';
 
-const MAX_NAMED_AFFILIATIONS = 3;
-
 /**
  * Collapses casing and `&`/`and`/punctuation-spacing variants of the same
  * institution string into one normalized key. Deliberately cheap — it is not
@@ -42,12 +40,17 @@ function dedupedAffiliations(papers: Paper[]): string[] {
 }
 
 /**
- * This is a statement about the papers, never a claim about the person:
- * each institution is where that paper's *presenter* was based, not
- * necessarily where this author (who may not have been the presenter) works.
- * Names at most `MAX_NAMED_AFFILIATIONS` institutions and folds the rest into
- * an "and N more" tail — worst case in the real bundle is >500 characters of
- * enumerated names, which doesn't fit under a button on a 320px screen.
+ * This is a statement about the papers, never a claim about the person: each
+ * institution is where that paper's *presenter* was based, not necessarily
+ * where this author (who may not have been the presenter) works.
+ *
+ * Deliberately does not name or count institutions here — the full deduped
+ * list is already rendered as a `<ul>` right above this control (and this
+ * hint is wired to the button via `aria-describedby`, so a screen-reader user
+ * who jumps straight to Follow still gets pointed at it), and re-enumerating
+ * even 3 of them in prose ran to hundreds of characters for real authors with
+ * long institution names — worse than pointless, since it duplicates the list
+ * for anyone reading linearly and still didn't fit under a 320px button.
  */
 function affiliationHint(paperCount: number, affiliations: string[]): string {
   const paperWord = paperCount === 1 ? 'paper' : 'papers';
@@ -55,26 +58,8 @@ function affiliationHint(paperCount: number, affiliations: string[]): string {
   if (affiliations.length === 0) {
     return `Appears on ${paperCount} ${paperWord}; no institution is recorded for them.`;
   }
-  if (affiliations.length === 1) {
-    return `Appears on ${paperCount} ${paperWord}, presented from ${affiliations[0]}.`;
-  }
-
-  const named = affiliations.slice(0, MAX_NAMED_AFFILIATIONS);
-  const remaining = affiliations.length - named.length;
-  const list =
-    remaining > 0
-      ? `${named.join(', ')} and ${remaining} more`
-      : named.length > 1
-        ? `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`
-        : named[0];
-
-  // No institution count asserted here on purpose: the cheap normalization above
-  // still under-merges some real-world variants, so any specific number could be
-  // wrong on this exact page — the one meant for a fast, trustworthy identity check.
-  return (
-    `Appears on ${paperCount} ${paperWord}, presented from several institutions, including: ${list}. ` +
-    `Following this name includes all of them.`
-  );
+  const institutionWord = affiliations.length === 1 ? 'one institution' : 'several institutions';
+  return `Appears on ${paperCount} ${paperWord}, presented from ${institutionWord} — listed above.`;
 }
 
 export function AuthorDetail() {
