@@ -1,0 +1,35 @@
+{
+  "fetched_at": "2026-09-19T08:17:24.959297+00:00",
+  "files": {
+    "main-program.pdf": {
+      "url": "https://conferences.miccai.org/2026/files/downloads/MICCAI2026-Main-Conference-Oral-and-Poster-Program.pdf",
+      "bytes": 441904,
+      "sha256": "640f30aa29982613067acdaeda3a243512298ed1b183ac7f07ed2ef24d6103aa",
+      "etag": "\"f7f8e0f05e47dd1:0\""
+    },
+    "satellite-program.pdf": {
+      "url": "https://conferences.miccai.org/2026/files/downloads/MICCAI2026-Satellite-Events-Program.pdf",
+      "bytes": 147012,
+      "sha256": "cec92badbf51e4f74aa3ea26ab569a37a85d5ee5c979a67b2558da6ff01e46bc",
+      "etag": "\"56114f6833bdd1:0\""
+    },
+    "workshops.html": {
+      "url": "https://conferences.miccai.org/2026/en/workshops.asp",
+      "bytes": 53925,
+      "sha256": "99b1e53f687cb9433572e6d3d84b7238ff82cd6dd465835297e864f1f2e8a7e0",
+      "etag": null
+    },
+    "challenges.html": {
+      "url": "https://conferences.miccai.org/2026/en/challenges.asp",
+      "bytes": 47200,
+      "sha256": "e370567ca8b0ef0628a7b92a479c6888ca2e65aab2f08301fc8143108994419c",
+      "etag": null
+    },
+    "tutorials.html": {
+      "url": "https://conferences.miccai.org/2026/en/tutorials.asp",
+      "bytes": 27503,
+      "sha256": "691bd85d8585a58943e4e6983e0860bab08899cf6ee833b239b0725343cf7ead",
+      "etag": null
+    }
+  }
+}

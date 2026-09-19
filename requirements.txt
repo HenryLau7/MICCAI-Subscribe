@@ -1,0 +1,6 @@
+# Program importer. Pinned: the official PDF changed layout mid-flight once
+# already, so the parser is the only thing allowed to move.
+PyMuPDF==1.28.0
+beautifulsoup4==4.15.0
+lxml==6.1.1
+PyYAML==6.0.3

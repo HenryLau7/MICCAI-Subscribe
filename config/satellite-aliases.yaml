@@ -1,0 +1,12 @@
+# Grid acronym (satellite-program.pdf)  ->  listing acronym (workshops/challenges/tutorials.asp)
+#
+# The two official sources spell some joint events differently. Verified by hand
+# against the listing pages on 2026-09-19. Any grid acronym not resolvable by the
+# automatic rules must appear here, or parse_satellite.py reports it as unmatched.
+
+"AE-CAI | PRISM":      "AE-CAI | CARE-CAI | OR 2.0"
+"FAIMI-BRIDGE-EPIMI":  "FAIMI - BRIDGE - EPIMI"
+"REG²":                "REG^2"
+"SELMA":               "SELMA3D"
+"OMIA13":              "OMIA"
+"MiRASOL":             "MIRASOL"
