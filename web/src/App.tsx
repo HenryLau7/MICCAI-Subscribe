@@ -11,6 +11,8 @@ import { AuthorDetail } from './routes/AuthorDetail';
 import { AffiliationDetail } from './routes/AffiliationDetail';
 import { SessionDetail } from './routes/SessionDetail';
 import { Schedule } from './routes/Schedule';
+import { Satellite } from './routes/Satellite';
+import { SatelliteDetail } from './routes/SatelliteDetail';
 import { CalendarPage } from './routes/CalendarPage';
 import { ImportPage } from './routes/ImportPage';
 
@@ -36,7 +38,8 @@ function AppShell() {
           <Route path="/affiliation/:key" element={<AffiliationDetail />} />
           <Route path="/session/:id" element={<SessionDetail />} />
           <Route path="/schedule" element={<Schedule />} />
-          <Route path="/satellite" element={<ComingSoon label="Satellite events" />} />
+          <Route path="/satellite" element={<Satellite />} />
+          <Route path="/satellite/:id" element={<SatelliteDetail />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/import" element={<ImportPage />} />
           <Route path="/about" element={<About />} />

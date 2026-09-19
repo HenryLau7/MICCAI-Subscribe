@@ -4,10 +4,8 @@ import { useProgram } from '../ui/ProgramContext';
 import { search, type SearchIndex, type SearchResult } from '../search/engine';
 import { SearchBox } from '../ui/SearchBox';
 import { PaperCard } from '../ui/PaperCard';
-import { BookmarkButton } from '../ui/BookmarkButton';
+import { SatelliteCard } from '../ui/SatelliteCard';
 import { EmptyState } from '../ui/EmptyState';
-import { formatDay, formatTime } from '../store/schedule';
-import type { SatelliteEvent } from '../data/types';
 
 const RESULT_LIMIT = 50;
 
@@ -17,27 +15,6 @@ function isPaperResult(r: SearchResult): r is Extract<SearchResult, { kind: 'pap
 
 function isSatelliteResult(r: SearchResult): r is Extract<SearchResult, { kind: 'satellite' }> {
   return r.kind === 'satellite';
-}
-
-function SatelliteCard({ event }: { event: SatelliteEvent }) {
-  return (
-    <article className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">{event.type}</p>
-          <h3 className="text-base font-semibold leading-snug text-[var(--fg)]">
-            {event.acronym ? `${event.acronym} — ${event.name}` : event.name}
-          </h3>
-        </div>
-        <BookmarkButton presentationId={event.id} />
-      </div>
-      <p className="mt-2 text-xs text-[var(--fg-muted)]">
-        {formatDay(event.start)} · {formatTime(event.start)}–{formatTime(event.end)}
-        {event.room ? ` · ${event.room}` : ''}
-        {event.floor ? ` (${event.floor})` : ''}
-      </p>
-    </article>
-  );
 }
 
 function runSearch(index: SearchIndex, query: string): SearchResult[] {
