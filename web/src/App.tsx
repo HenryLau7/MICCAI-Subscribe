@@ -11,6 +11,8 @@ import { AuthorDetail } from './routes/AuthorDetail';
 import { AffiliationDetail } from './routes/AffiliationDetail';
 import { SessionDetail } from './routes/SessionDetail';
 import { Schedule } from './routes/Schedule';
+import { CalendarPage } from './routes/CalendarPage';
+import { ImportPage } from './routes/ImportPage';
 
 /** Placeholder for routes another task will build out; keeps bottom-nav links from going blank. */
 function ComingSoon({ label }: { label: string }) {
@@ -35,7 +37,8 @@ function AppShell() {
           <Route path="/session/:id" element={<SessionDetail />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/satellite" element={<ComingSoon label="Satellite events" />} />
-          <Route path="/calendar" element={<ComingSoon label="Calendar" />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/import" element={<ImportPage />} />
           <Route path="/about" element={<About />} />
           <Route path="*" element={<ComingSoon label="Not found" />} />
         </Routes>
