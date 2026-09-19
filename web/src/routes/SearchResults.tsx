@@ -56,7 +56,7 @@ export function SearchResults() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-16 pt-6">
       <h1 className="sr-only">Search results</h1>
-      <SearchBox autoFocus placeholder="Search title, author, board number…" />
+      <SearchBox placeholder="Search title, author, board number…" />
       <p className="text-xs text-[var(--fg-muted)]">
         Matches are substrings, so short or common terms can be noisy. Try a full name or the board number
         (e.g. M-PM-001) to narrow it down.
