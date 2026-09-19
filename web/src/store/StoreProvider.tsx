@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { loadState, saveState, type StoredState } from './storage';
 
@@ -36,48 +36,38 @@ function toggleIn<K extends keyof StoredState>(
 export function StoreProvider(props: { children: ReactNode }) {
   const [state, setState] = useState<StoredState>(() => loadState());
 
+  // 首次挂载时 state 就是 loadState() 刚读出来的值，原样写回毫无意义；
+  // 在读取失败退回默认值的场景下，这样写还会把已有数据覆盖掉。跳过首次运行。
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    saveState(state);
+  }, [state]);
+
   const toggleBookmark = useCallback((id: string) => {
-    setState((s) => {
-      const next = toggleIn(s, 'bookmarks', id);
-      saveState(next);
-      return next;
-    });
+    setState((s) => toggleIn(s, 'bookmarks', id));
   }, []);
 
   const toggleFollowAuthor = useCallback((slug: string) => {
-    setState((s) => {
-      const next = toggleIn(s, 'followedAuthors', slug);
-      saveState(next);
-      return next;
-    });
+    setState((s) => toggleIn(s, 'followedAuthors', slug));
   }, []);
 
   const toggleFollowAffiliation = useCallback((key: string) => {
-    setState((s) => {
-      const next = toggleIn(s, 'followedAffiliations', key);
-      saveState(next);
-      return next;
-    });
+    setState((s) => toggleIn(s, 'followedAffiliations', key));
   }, []);
 
   const toggleExcluded = useCallback((id: string) => {
-    setState((s) => {
-      const next = toggleIn(s, 'excluded', id);
-      saveState(next);
-      return next;
-    });
+    setState((s) => toggleIn(s, 'excluded', id));
   }, []);
 
   const setReminderMinutes = useCallback((minutes: number) => {
-    setState((s) => {
-      const next: StoredState = { ...s, prefs: { ...s.prefs, reminderMinutes: minutes } };
-      saveState(next);
-      return next;
-    });
+    setState((s) => ({ ...s, prefs: { ...s.prefs, reminderMinutes: minutes } }));
   }, []);
 
   const replaceState = useCallback((next: StoredState) => {
-    saveState(next);
     setState(next);
   }, []);
 

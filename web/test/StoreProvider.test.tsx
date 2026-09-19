@@ -1,10 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { StoreProvider, useStore } from '../src/store/StoreProvider';
 import { STORAGE_KEY } from '../src/store/storage';
 
 beforeEach(() => localStorage.clear());
-afterEach(() => cleanup());
 
 function Probe() {
   const { state, isBookmarked, toggleBookmark } = useStore();
