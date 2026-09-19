@@ -26,10 +26,17 @@ const MULTI_KIND_PAPER_ID = 'M-PM-042'; // has both a poster and an oral present
 const AUTHOR_SLUG = 'yuan-xue'; // has 2 papers in the program
 const SESSION_WITH_ORDER = 'O1A'; // oral session with several ordered talks
 
-const MULTI_INSTITUTION_AUTHOR_SLUG = 'guang-yang'; // 10 papers spanning 8 distinct affiliations
+const MULTI_INSTITUTION_AUTHOR_SLUG = 'guang-yang'; // 10 papers, 7 distinct affiliations after normalization
 // Never a presenter on any of their 2 papers, so Author.affiliations (decode.ts) is empty —
 // this is the specific 80.5%-of-authors case the hint fix covers.
 const NON_PRESENTER_AUTHOR_SLUG = 'yiqiang-zhan';
+// 9 papers; one raw affiliation is "University of Liverpool", another is the bare-lowercase
+// "university of liverpool" — a pure casing duplicate that normalization must collapse to one.
+const CASING_DUPLICATE_AUTHOR_SLUG = 'yitian-zhao';
+// 8 papers, 7 distinct (short-named) institutions — the hint for this one stays under 200
+// characters even with all 3 named slots used, unlike some other multi-institution authors
+// whose institution names are themselves long (see the fix-round-2 report for real examples).
+const MANY_SHORT_INSTITUTIONS_AUTHOR_SLUG = 'shuo-li';
 
 beforeEach(() => {
   localStorage.clear();
@@ -133,11 +140,11 @@ describe('AuthorDetail', () => {
     expect(stored.followedAuthors).toContain(AUTHOR_SLUG);
   });
 
-  it('discloses every institution by name for an author whose papers span several', async () => {
+  it('discloses institutions by name for an author whose papers span several, without a count claim', async () => {
     const author = program.authors.get(MULTI_INSTITUTION_AUTHOR_SLUG)!;
     const papers = author.paperIds.map((pid) => program.byPaperId.get(pid)!);
     const distinctAffiliations = new Set(papers.map((p) => p.affiliation).filter(Boolean));
-    expect(distinctAffiliations.size).toBeGreaterThan(1); // sanity: fixture really spans several
+    expect(distinctAffiliations.size).toBeGreaterThan(3); // sanity: fixture really spans several
 
     renderAt(`/author/${MULTI_INSTITUTION_AUTHOR_SLUG}`, '/author/:slug', <AuthorDetail />);
     await screen.findByRole('heading', { level: 1, name: author.name });
@@ -146,10 +153,61 @@ describe('AuthorDetail', () => {
     // appear inside each paper's own PaperCard further down the page.
     const btn = screen.getByRole('button', { name: /follow/i });
     const hint = btn.parentElement!.querySelector('span')!.textContent!;
-    expect(hint).toMatch(new RegExp(`${distinctAffiliations.size} different institutions`));
-    // Naming them, not just counting them — pick two that must both appear.
+    // Naming institutions is fine; asserting a specific count of them is not — the cheap
+    // normalization can't reliably tell how many truly-distinct institutions there are.
+    expect(hint).not.toMatch(/\d+ different institutions/);
+    expect(hint).toMatch(/several institutions/);
     expect(hint).toMatch(/University of Cambridge/);
-    expect(hint).toMatch(/University of Oxford/);
+    expect(hint).toMatch(/and \d+ more/);
+  });
+
+  it('collapses a case-only affiliation duplicate into a single entry', async () => {
+    const author = program.authors.get(CASING_DUPLICATE_AUTHOR_SLUG)!;
+    const papers = author.paperIds.map((pid) => program.byPaperId.get(pid)!);
+    const bareLiverpoolVariants = new Set(
+      papers.map((p) => p.affiliation).filter((a) => /^university of liverpool$/i.test(a)),
+    );
+    expect(bareLiverpoolVariants.size).toBeGreaterThan(1); // sanity: fixture really has the casing collision
+
+    renderAt(`/author/${CASING_DUPLICATE_AUTHOR_SLUG}`, '/author/:slug', <AuthorDetail />);
+    await screen.findByRole('heading', { level: 1, name: author.name });
+
+    // The header's institution list shows every deduped entry (unlike the capped hint),
+    // so it's the right place to check the casing pair actually collapsed to one.
+    const header = screen.getByRole('heading', { level: 1 }).closest('header')!;
+    const items = within(header)
+      .getAllByRole('listitem')
+      .map((li) => li.textContent ?? '');
+    const bareLiverpoolEntries = items.filter((t) => /^university of liverpool$/i.test(t));
+    expect(bareLiverpoolEntries).toHaveLength(1);
+  });
+
+  it('caps the hint at 3 named institutions plus an "and N more" tail, and keeps it short', async () => {
+    const author = program.authors.get(MANY_SHORT_INSTITUTIONS_AUTHOR_SLUG)!;
+    renderAt(`/author/${MANY_SHORT_INSTITUTIONS_AUTHOR_SLUG}`, '/author/:slug', <AuthorDetail />);
+    await screen.findByRole('heading', { level: 1, name: author.name });
+
+    const btn = screen.getByRole('button', { name: /follow/i });
+    const hint = btn.parentElement!.querySelector('span')!.textContent!;
+    expect(hint).toMatch(/Tongji University/);
+    expect(hint).toMatch(/Harbin Institute of Technology/);
+    expect(hint).toMatch(/Fudan University/);
+    expect(hint).toMatch(/and 4 more/);
+    // The 4th distinct institution must be folded into "and N more", never named.
+    expect(hint).not.toMatch(/Case Western Reserve University/);
+    expect(hint.length).toBeLessThan(200);
+  });
+
+  it('never asserts a specific institution count in any author hint', async () => {
+    for (const slug of [MULTI_INSTITUTION_AUTHOR_SLUG, MANY_SHORT_INSTITUTIONS_AUTHOR_SLUG, CASING_DUPLICATE_AUTHOR_SLUG]) {
+      const author = program.authors.get(slug)!;
+      const result = renderAt(`/author/${slug}`, '/author/:slug', <AuthorDetail />);
+      await screen.findByRole('heading', { level: 1, name: author.name });
+      const btn = screen.getByRole('button', { name: /follow/i });
+      const hint = btn.parentElement!.querySelector('span')!.textContent!;
+      expect(hint).not.toMatch(/\d+ different institutions/);
+      result.unmount();
+    }
   });
 
   it('states a single institution plainly for an author with exactly one', async () => {
