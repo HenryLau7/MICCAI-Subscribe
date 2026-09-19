@@ -8,8 +8,11 @@ interface FollowButtonProps {
    * Author identity here is just a normalized name string — no ORCID, no
    * disambiguation (5651 distinct names, and common romanized names collide).
    * `hint` is the follow target's affiliation/country: the only thing a user
-   * has to judge "is this actually who/where I mean" before following. It is
-   * always rendered next to the control, never hidden behind a tooltip.
+   * has to judge "is this actually who/where I mean" before following.
+   * Rendered next to the control whenever it's non-empty, never hidden behind
+   * a tooltip — callers should supply a real, non-empty hint whenever there is
+   * any disambiguating information to show (for authors, that includes the
+   * "no institution recorded" case: say so, don't just render nothing).
    */
   hint: string;
 }

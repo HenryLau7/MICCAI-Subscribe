@@ -26,6 +26,11 @@ const MULTI_KIND_PAPER_ID = 'M-PM-042'; // has both a poster and an oral present
 const AUTHOR_SLUG = 'yuan-xue'; // has 2 papers in the program
 const SESSION_WITH_ORDER = 'O1A'; // oral session with several ordered talks
 
+const MULTI_INSTITUTION_AUTHOR_SLUG = 'guang-yang'; // 10 papers spanning 8 distinct affiliations
+// Never a presenter on any of their 2 papers, so Author.affiliations (decode.ts) is empty —
+// this is the specific 80.5%-of-authors case the hint fix covers.
+const NON_PRESENTER_AUTHOR_SLUG = 'yiqiang-zhan';
+
 beforeEach(() => {
   localStorage.clear();
   mockedLoadProgram.mockResolvedValue(program);
@@ -126,6 +131,49 @@ describe('AuthorDetail', () => {
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
     expect(stored.followedAuthors).toContain(AUTHOR_SLUG);
+  });
+
+  it('discloses every institution by name for an author whose papers span several', async () => {
+    const author = program.authors.get(MULTI_INSTITUTION_AUTHOR_SLUG)!;
+    const papers = author.paperIds.map((pid) => program.byPaperId.get(pid)!);
+    const distinctAffiliations = new Set(papers.map((p) => p.affiliation).filter(Boolean));
+    expect(distinctAffiliations.size).toBeGreaterThan(1); // sanity: fixture really spans several
+
+    renderAt(`/author/${MULTI_INSTITUTION_AUTHOR_SLUG}`, '/author/:slug', <AuthorDetail />);
+    await screen.findByRole('heading', { level: 1, name: author.name });
+
+    // Scope to the follow hint itself — the same institution names also legitimately
+    // appear inside each paper's own PaperCard further down the page.
+    const btn = screen.getByRole('button', { name: /follow/i });
+    const hint = btn.parentElement!.querySelector('span')!.textContent!;
+    expect(hint).toMatch(new RegExp(`${distinctAffiliations.size} different institutions`));
+    // Naming them, not just counting them — pick two that must both appear.
+    expect(hint).toMatch(/University of Cambridge/);
+    expect(hint).toMatch(/University of Oxford/);
+  });
+
+  it('states a single institution plainly for an author with exactly one', async () => {
+    const author = program.authors.get(AUTHOR_SLUG)!; // yuan-xue: 2 papers, 1 institution
+    renderAt(`/author/${AUTHOR_SLUG}`, '/author/:slug', <AuthorDetail />);
+    await screen.findByRole('heading', { level: 1, name: author.name });
+
+    expect(screen.getByText(/Appears on 2 papers, presented from The Ohio State University\./)).toBeInTheDocument();
+    // Must never claim it's the person's own institution.
+    expect(screen.queryByText(/works at|affiliated with/i)).not.toBeInTheDocument();
+  });
+
+  it('shows a non-empty follow hint even when Author.affiliations is empty (the 80.5% case)', async () => {
+    const author = program.authors.get(NON_PRESENTER_AUTHOR_SLUG)!;
+    expect(author.affiliations).toHaveLength(0); // sanity: fixture really hits the broken case
+
+    renderAt(`/author/${NON_PRESENTER_AUTHOR_SLUG}`, '/author/:slug', <AuthorDetail />);
+    await screen.findByRole('heading', { level: 1, name: author.name });
+
+    const btn = screen.getByRole('button', { name: /follow/i });
+    const hint = btn.parentElement!.querySelector('span');
+    expect(hint).not.toBeNull();
+    expect(hint!.textContent).not.toBe('');
+    expect(hint!.textContent).toMatch(/ShanghaiTech University/);
   });
 });
 
