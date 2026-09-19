@@ -6,6 +6,10 @@ import { Footer } from './ui/Footer';
 import { Home } from './routes/Home';
 import { SearchResults } from './routes/SearchResults';
 import { About } from './routes/About';
+import { PaperDetail } from './routes/PaperDetail';
+import { AuthorDetail } from './routes/AuthorDetail';
+import { AffiliationDetail } from './routes/AffiliationDetail';
+import { SessionDetail } from './routes/SessionDetail';
 
 /** Placeholder for routes another task will build out; keeps bottom-nav links from going blank. */
 function ComingSoon({ label }: { label: string }) {
@@ -24,6 +28,10 @@ function AppShell() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<SearchResults />} />
+          <Route path="/paper/:id" element={<PaperDetail />} />
+          <Route path="/author/:slug" element={<AuthorDetail />} />
+          <Route path="/affiliation/:key" element={<AffiliationDetail />} />
+          <Route path="/session/:id" element={<SessionDetail />} />
           <Route path="/schedule" element={<ComingSoon label="Schedule" />} />
           <Route path="/satellite" element={<ComingSoon label="Satellite events" />} />
           <Route path="/about" element={<About />} />

@@ -1,0 +1,83 @@
+import { Link } from 'react-router-dom';
+import type { Presentation, Program } from '../data/types';
+import { formatDay, formatTime } from '../store/schedule';
+import { BookmarkButton } from './BookmarkButton';
+
+const KIND_LABEL: Record<Presentation['kind'], string> = {
+  poster: 'Poster',
+  oral: 'Oral',
+  spotlight: 'Spotlight',
+};
+
+interface PresentationRowProps {
+  program: Program;
+  presentation: Presentation;
+  /**
+   * true (session context, e.g. SessionDetail): identify the row by paper —
+   * title, presenters, board number.
+   * false (paper context, e.g. PaperDetail): identify the row by session —
+   * name, day, time, room.
+   */
+  showPaper: boolean;
+}
+
+/**
+ * One presentation: kind, its position in the session (never a computed
+ * clock time — per-talk times don't exist in the source), day/time, and a
+ * bookmark toggle. Poster sessions never show a room — MICCAI doesn't
+ * publish poster hall names, so we say so instead of guessing.
+ */
+export function PresentationRow({ program, presentation, showPaper }: PresentationRowProps) {
+  const session = program.sessions.get(presentation.sessionId);
+  const paper = program.byPaperId.get(presentation.paperId);
+  if (!session || !paper) return null;
+
+  const isPoster = session.kind === 'poster';
+  const kindLabel = KIND_LABEL[presentation.kind];
+
+  return (
+    <li className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] px-3 py-2">
+      <div className="min-w-0">
+        {showPaper ? (
+          <>
+            <p className="truncate text-sm font-medium text-[var(--fg)]">
+              <Link
+                to={`/paper/${paper.id}`}
+                className="hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              >
+                {paper.title}
+              </Link>
+            </p>
+            <p className="truncate text-xs text-[var(--fg-muted)]">
+              {(paper.presenters.length > 0 ? paper.presenters : paper.authors).join(', ')}
+            </p>
+            <p className="text-xs text-[var(--fg-muted)]">
+              Board <span className="font-mono font-semibold text-[var(--fg)]">{paper.id}</span>
+            </p>
+          </>
+        ) : (
+          <p className="truncate text-sm font-medium text-[var(--fg)]">
+            <Link
+              to={`/session/${session.id}`}
+              className="hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            >
+              {session.name}
+            </Link>
+          </p>
+        )}
+        <p className="text-xs text-[var(--fg-muted)]">
+          {kindLabel}
+          {presentation.orderInSession > 0 ? ` · #${presentation.orderInSession} in session` : ''}
+          {' · '}
+          {formatDay(session.start)} · {formatTime(session.start)}–{formatTime(session.end)}
+          {isPoster
+            ? ' · hall not published — find the board number'
+            : session.room
+              ? ` · ${session.room}`
+              : ''}
+        </p>
+      </div>
+      <BookmarkButton presentationId={presentation.id} />
+    </li>
+  );
+}
