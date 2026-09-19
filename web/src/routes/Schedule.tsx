@@ -5,6 +5,7 @@ import { useStore } from '../store/StoreProvider';
 import { buildSchedule, type ScheduleDay } from '../store/schedule';
 import { EmptyState } from '../ui/EmptyState';
 import { ScheduleItemRow } from '../ui/ScheduleItemRow';
+import { useRovingTabList } from '../ui/useRovingTabList';
 
 const CONFERENCE_DAYS = ['2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01'];
 const DAY_LABEL: Record<string, string> = {
@@ -54,6 +55,7 @@ export function Schedule() {
   const { state } = useStore();
   const days = useMemo(() => buildSchedule(program, state), [program, state]);
   const [selected, setSelected] = useState(() => defaultSelectedDay(days));
+  const { tabProps } = useRovingTabList(CONFERENCE_DAYS, selected, setSelected);
 
   const activeItems = days.find((d) => d.date === selected)?.items ?? [];
 
@@ -70,7 +72,7 @@ export function Schedule() {
       </header>
 
       <div role="tablist" aria-label="Conference day" className="flex gap-2 overflow-x-auto pb-1">
-        {CONFERENCE_DAYS.map((date) => {
+        {CONFERENCE_DAYS.map((date, index) => {
           const count = days.find((d) => d.date === date)?.items.length ?? 0;
           const isSelected = date === selected;
           return (
@@ -82,6 +84,7 @@ export function Schedule() {
               aria-selected={isSelected}
               aria-controls="schedule-panel"
               onClick={() => setSelected(date)}
+              {...tabProps(index)}
               className={[
                 'inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors',
                 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]',

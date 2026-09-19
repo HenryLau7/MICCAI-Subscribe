@@ -3,6 +3,7 @@ import { useProgram } from '../ui/ProgramContext';
 import { SatelliteCard } from '../ui/SatelliteCard';
 import { EmptyState } from '../ui/EmptyState';
 import { formatTime } from '../store/schedule';
+import { useRovingTabList } from '../ui/useRovingTabList';
 import type { SatelliteEvent, SatelliteType } from '../data/types';
 
 const DAYS = ['2026-09-27', '2026-10-01'] as const;
@@ -92,6 +93,9 @@ export function Satellite() {
   const [activeTypes, setActiveTypes] = useState<Set<SatelliteType>>(new Set(TYPES));
   const [theme, setTheme] = useState<string>('all');
   const themeSelectId = useId();
+  const viewHeadingId = useId();
+  const typeHeadingId = useId();
+  const { tabProps } = useRovingTabList(DAYS, day, setDay);
 
   const dayCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -143,7 +147,7 @@ export function Satellite() {
       </header>
 
       <div role="tablist" aria-label="Satellite day" className="flex gap-2 overflow-x-auto pb-1">
-        {DAYS.map((d) => {
+        {DAYS.map((d, index) => {
           const selected = d === day;
           return (
             <button
@@ -154,6 +158,7 @@ export function Satellite() {
               aria-selected={selected}
               aria-controls="satellite-panel"
               onClick={() => setDay(d)}
+              {...tabProps(index)}
               className={`${buttonBase} ${selected ? buttonOn : buttonOff}`}
             >
               {DAY_LABEL[d]} ({dayCounts[d]})
@@ -162,40 +167,50 @@ export function Satellite() {
         })}
       </div>
 
-      <div className="flex items-center gap-2" role="group" aria-label="Switch view">
-        <button
-          type="button"
-          aria-pressed={view === 'list'}
-          onClick={() => setView('list')}
-          className={`${buttonBase} ${view === 'list' ? buttonOn : buttonOff}`}
-        >
-          List
-        </button>
-        <button
-          type="button"
-          aria-pressed={view === 'grid'}
-          onClick={() => setView('grid')}
-          className={`${buttonBase} ${view === 'grid' ? buttonOn : buttonOff}`}
-        >
-          Room grid
-        </button>
+      <div className="flex flex-col gap-1">
+        <span id={viewHeadingId} className="text-xs font-medium text-[var(--fg-muted)]">
+          View
+        </span>
+        <div className="flex items-center gap-2" role="group" aria-labelledby={viewHeadingId}>
+          <button
+            type="button"
+            aria-pressed={view === 'list'}
+            onClick={() => setView('list')}
+            className={`${buttonBase} ${view === 'list' ? buttonOn : buttonOff}`}
+          >
+            List
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === 'grid'}
+            onClick={() => setView('grid')}
+            className={`${buttonBase} ${view === 'grid' ? buttonOn : buttonOff}`}
+          >
+            Room grid
+          </button>
+        </div>
       </div>
 
-      <div role="group" aria-label="Filter by type" className="flex flex-wrap gap-2">
-        {TYPES.map((t) => {
-          const on = activeTypes.has(t);
-          return (
-            <button
-              key={t}
-              type="button"
-              aria-pressed={on}
-              onClick={() => toggleType(t)}
-              className={`${buttonBase} ${on ? buttonOn : buttonOff}`}
-            >
-              {TYPE_LABEL[t]}
-            </button>
-          );
-        })}
+      <div className="flex flex-col gap-1">
+        <span id={typeHeadingId} className="text-xs font-medium text-[var(--fg-muted)]">
+          Type
+        </span>
+        <div role="group" aria-labelledby={typeHeadingId} className="flex flex-wrap gap-2">
+          {TYPES.map((t) => {
+            const on = activeTypes.has(t);
+            return (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={on}
+                onClick={() => toggleType(t)}
+                className={`${buttonBase} ${on ? buttonOn : buttonOff}`}
+              >
+                {TYPE_LABEL[t]}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex flex-col gap-1">

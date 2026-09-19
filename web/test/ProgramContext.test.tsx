@@ -57,6 +57,29 @@ describe('ProgramProvider', () => {
     expect(screen.queryByTestId('ready')).not.toBeInTheDocument();
   });
 
+  it('shows a skeleton — several placeholder cards shaped like the eventual layout, not just a spinner glyph — while loading', () => {
+    mockedLoadProgram.mockReturnValue(new Promise(() => {})); // never resolves
+    render(
+      <ProgramProvider>
+        <Probe />
+      </ProgramProvider>,
+    );
+
+    // Positive assertion of what IS there, not just that a testid exists:
+    // several distinct pulsing placeholder bars, matching a heading + search
+    // bar + a handful of cards, not a single spinner element.
+    const skeleton = screen.getByTestId('program-skeleton');
+    const pulsingBars = skeleton.querySelectorAll('.animate-pulse');
+    expect(pulsingBars.length).toBeGreaterThanOrEqual(6);
+    // Every animated element must be wired to stop animating under
+    // prefers-reduced-motion (Tailwind's motion-reduce: variant) — reduced
+    // motion should suppress this skeleton's pulse the same way it already
+    // suppresses everything else in the app.
+    for (const bar of pulsingBars) {
+      expect(bar).toHaveClass('motion-reduce:animate-none');
+    }
+  });
+
   it('renders an error state with a Retry control when loading fails, and recovers on retry', async () => {
     mockedLoadProgram.mockRejectedValueOnce(new Error('network down'));
 

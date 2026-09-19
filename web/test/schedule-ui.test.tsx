@@ -360,4 +360,42 @@ describe('Schedule page', () => {
     expect(within(followedRow).getByRole('button', { name: /^bookmark$/i })).toBeInTheDocument();
     expect(within(followedRow).queryByRole('button', { name: /remove bookmark/i })).not.toBeInTheDocument();
   });
+
+  it('moves focus and selection across day tabs with the arrow keys (roving tabindex), wrapping at both ends', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-01T00:00:00Z')); // outside the conference window -> day 1 selected
+    await renderSchedule(defaultState());
+
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs).toHaveLength(5);
+    tabs[0].focus();
+    expect(tabs[0]).toHaveFocus();
+    expect(tabs[0]).toHaveAttribute('tabindex', '0');
+    expect(tabs[1]).toHaveAttribute('tabindex', '-1');
+
+    fireEvent.keyDown(tabs[0], { key: 'ArrowRight' });
+    expect(tabs[1]).toHaveFocus();
+    expect(tabs[1]).toHaveAttribute('aria-selected', 'true');
+    expect(tabs[1]).toHaveAttribute('tabindex', '0');
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'false');
+    expect(tabs[0]).toHaveAttribute('tabindex', '-1');
+
+    fireEvent.keyDown(tabs[1], { key: 'ArrowLeft' });
+    expect(tabs[0]).toHaveFocus();
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+
+    // Wraps backward from the first tab to the last.
+    fireEvent.keyDown(tabs[0], { key: 'ArrowLeft' });
+    expect(tabs[4]).toHaveFocus();
+    expect(tabs[4]).toHaveAttribute('aria-selected', 'true');
+
+    // End jumps straight to the last tab; Home jumps straight to the first.
+    fireEvent.keyDown(tabs[4], { key: 'Home' });
+    expect(tabs[0]).toHaveFocus();
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.keyDown(tabs[0], { key: 'End' });
+    expect(tabs[4]).toHaveFocus();
+    expect(tabs[4]).toHaveAttribute('aria-selected', 'true');
+  });
 });

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { loadProgram } from '../data/load';
 import { buildSearchIndex, type SearchIndex } from '../search/engine';
@@ -43,18 +43,43 @@ export function ProgramProvider({ children }: { children: ReactNode }) {
     fetchProgram();
   }, [fetchProgram]);
 
+  // Mirrors StoreProvider's useMemo-wrapped context value: `state` (from
+  // useState) keeps a stable reference across re-renders that don't call
+  // setState — e.g. a bookmark toggle re-rendering the parent StoreProvider
+  // and cascading down — so this only recomputes on an actual load/retry,
+  // not on every unrelated re-render of a component above this one.
+  const readyValue = useMemo<ProgramApi | null>(
+    () => (state.status === 'ready' ? { program: state.program, index: state.index } : null),
+    [state],
+  );
+
   if (state.status === 'loading') {
+    // A skeleton, not a spinner: the program bundle is the one thing every
+    // route needs before it can render anything, so this loading gate has
+    // no route to shape itself around yet. It approximates the shape most
+    // routes actually open with (a heading, then a list of cards) — Home,
+    // Schedule and Satellite's list view all do — so there's little layout
+    // shift into the real content once it arrives, which matters more on a
+    // slow venue connection than it would on a fast one.
     return (
-      <div
-        className="flex min-h-dvh flex-col items-center justify-center gap-3 px-6 text-center"
-        role="status"
-        aria-live="polite"
-      >
-        <div
-          aria-hidden="true"
-          className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)] motion-reduce:animate-none"
-        />
-        <p className="text-sm text-[var(--fg-muted)]">Loading the MICCAI 2026 program…</p>
+      <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-16 pt-6" role="status" aria-live="polite">
+        <span className="sr-only">Loading the MICCAI 2026 program…</span>
+        <div data-testid="program-skeleton" aria-hidden="true" className="flex flex-col gap-4">
+          <div className="h-6 w-40 rounded-md bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
+          <div className="h-11 w-full rounded-lg bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
+          <div className="flex flex-col gap-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex flex-col gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4"
+              >
+                <div className="h-4 w-3/4 rounded bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
+                <div className="h-3 w-1/2 rounded bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
+                <div className="h-3 w-1/3 rounded bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -74,11 +99,9 @@ export function ProgramProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  return (
-    <ProgramContext.Provider value={{ program: state.program, index: state.index }}>
-      {children}
-    </ProgramContext.Provider>
-  );
+  // readyValue is only null while state.status is 'loading' or 'error',
+  // both of which returned above — non-null by construction here.
+  return <ProgramContext.Provider value={readyValue!}>{children}</ProgramContext.Provider>;
 }
 
 // eslint-disable-next-line react/only-export-components -- hook and provider share one small file by design (mirrors StoreProvider.tsx)

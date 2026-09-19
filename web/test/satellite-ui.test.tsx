@@ -194,6 +194,30 @@ describe('Satellite page', () => {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
     expect(stored.bookmarks).toContain(CDMRI.id);
   });
+
+  it('moves focus and selection between the day tabs with the arrow keys (roving tabindex), wrapping with only two tabs', async () => {
+    await renderSatellite();
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs).toHaveLength(2);
+    // Day 1 (2026-09-27) is selected by default.
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+    expect(tabs[0]).toHaveAttribute('tabindex', '0');
+    expect(tabs[1]).toHaveAttribute('tabindex', '-1');
+
+    tabs[0].focus();
+    fireEvent.keyDown(tabs[0], { key: 'ArrowRight' });
+    expect(tabs[1]).toHaveFocus();
+    expect(tabs[1]).toHaveAttribute('aria-selected', 'true');
+    // Switching tabs actually changed which events render — day 2's own
+    // event is now visible (not merely that the tab attributes flipped).
+    expect(screen.getByText(IMFUSION.acronym)).toBeInTheDocument();
+
+    // Only two tabs: ArrowRight from the last one wraps back to the first.
+    fireEvent.keyDown(tabs[1], { key: 'ArrowRight' });
+    expect(tabs[0]).toHaveFocus();
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('CDMRI')).toBeInTheDocument();
+  });
 });
 
 // --- SatelliteDetail ---------------------------------------------------------
