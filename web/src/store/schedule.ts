@@ -33,7 +33,8 @@ function collect(program: Program, state: StoredState): ScheduleItem[] {
   const addPresentation = (
     id: string, source: ScheduleItem['source'], label: string,
   ): void => {
-    if (excluded.has(id)) return;
+    // excluded 只作用于关注带出来的结果；显式收藏永远不该被它吞掉
+    if (source !== 'bookmark' && excluded.has(id)) return;
     const pr = program.byPresentationId.get(id);
     if (!pr) return;
     const session = program.sessions.get(pr.sessionId);

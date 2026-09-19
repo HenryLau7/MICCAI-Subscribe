@@ -49,9 +49,13 @@ describe('buildSchedule', () => {
   it('does NOT flag two posters in the same session as a conflict', () => {
     const state = { ...defaultState(), bookmarks: ['M-PM-001', 'M-PM-002'] };
     const [day] = buildSchedule(program, state);
-    for (const item of day.items) {
-      expect(item.conflicts.every((c) => c.level === 'same-poster-session')).toBe(true);
-    }
+    // Structural: both bookmarks must actually resolve into items, and each must
+    // carry a non-empty, same-poster-session-only conflicts list pointing at the
+    // other — an empty conflicts array (e.g. from a silently dropped lookup)
+    // must NOT pass this test.
+    expect(day.items).toHaveLength(2);
+    expect(day.items[0].conflicts).toEqual([{ level: 'same-poster-session', withKey: day.items[1].key }]);
+    expect(day.items[1].conflicts).toEqual([{ level: 'same-poster-session', withKey: day.items[0].key }]);
   });
 
   it('flags two overlapping oral sessions as a hard conflict', () => {
@@ -75,6 +79,18 @@ describe('buildSchedule', () => {
     const state = { ...defaultState(), followedAuthors: ['yuan-xue'], excluded: ['M-PM-001'] };
     const days = buildSchedule(program, state);
     expect(days.flatMap((d) => d.items).some((i) => i.paper?.id === 'M-PM-001')).toBe(false);
+  });
+
+  it('an explicit bookmark is never suppressed by an exclusion meant for follow results', () => {
+    const state = {
+      ...defaultState(),
+      followedAuthors: ['yuan-xue'],
+      excluded: ['M-PM-001'],
+      bookmarks: ['M-PM-001'],
+    };
+    const item = buildSchedule(program, state).flatMap((d) => d.items).find((i) => i.paper?.id === 'M-PM-001');
+    expect(item).toBeDefined();
+    expect(item?.source).toBe('bookmark');
   });
 
   it('an explicit bookmark wins over a follow as the item source', () => {
