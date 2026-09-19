@@ -25,6 +25,25 @@ function unfold(ics: string): string {
   return ics.replace(/\r\n /g, '');
 }
 
+/**
+ * Stubs `URL.createObjectURL`/`revokeObjectURL` and captures the Blob passed
+ * in, instead of relying on jsdom's real object-URL machinery (it errors on
+ * a non-jsdom Blob instance in this test environment). The DOM lib types
+ * `createObjectURL`'s parameter as `Blob | MediaSource`; narrowed to `Blob`
+ * *inside* the mock body (our production code only ever passes a Blob),
+ * rather than narrowing the mock's own parameter type, which the real
+ * signature doesn't allow.
+ */
+function mockObjectUrl(): { captured: () => Blob | undefined } {
+  let captured: Blob | undefined;
+  vi.spyOn(URL, 'createObjectURL').mockImplementation((obj: Blob | MediaSource) => {
+    if (obj instanceof Blob) captured = obj;
+    return 'blob:mock';
+  });
+  vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+  return { captured: () => captured };
+}
+
 async function renderCalendar(state: StoredState) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   render(
@@ -91,23 +110,15 @@ describe('CalendarPage', () => {
   });
 
   it('downloading .ics produces a calendar file containing the bookmarked session', async () => {
-    // Capture the Blob passed to URL.createObjectURL rather than relying on
-    // jsdom's real object-URL machinery (it errors on a non-jsdom Blob
-    // instance under this test environment).
-    let captured: Blob | undefined;
-    vi.spyOn(URL, 'createObjectURL').mockImplementation((b: Blob) => {
-      captured = b;
-      return 'blob:mock';
-    });
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const { captured } = mockObjectUrl();
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
     await renderCalendar({ ...defaultState(), bookmarks: ['M-PM-001'] });
     fireEvent.click(screen.getByRole('button', { name: /^download \.ics$/i }));
 
     expect(clickSpy).toHaveBeenCalled();
-    expect(captured).toBeDefined();
-    const text = unfold(await captured!.text());
+    expect(captured()).toBeDefined();
+    const text = unfold(await captured()!.text());
     expect(text).toContain('BEGIN:VCALENDAR');
     expect(text).toContain('M-PM-001'); // the bookmarked poster's board number, in the session description
     // The session window this brief's step 6 calls out: 2026-09-28 16:00-18:00 Europe/Paris.
@@ -131,18 +142,13 @@ describe('CalendarPage', () => {
   });
 
   it('reflects the changed reminder preference in the next .ics download', async () => {
-    let captured: Blob | undefined;
-    vi.spyOn(URL, 'createObjectURL').mockImplementation((b: Blob) => {
-      captured = b;
-      return 'blob:mock';
-    });
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const { captured } = mockObjectUrl();
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
     await renderCalendar({ ...defaultState(), bookmarks: ['M-PM-001'] });
     fireEvent.click(screen.getByRole('radio', { name: /60 min before/i }));
     fireEvent.click(screen.getByRole('button', { name: /^download \.ics$/i }));
-    const text = await captured!.text();
+    const text = await captured()!.text();
     expect(text).toContain('TRIGGER:-PT60M');
   });
 
@@ -179,18 +185,13 @@ describe('CalendarPage', () => {
   });
 
   it('downloads a JSON transfer file that matches the current store state', async () => {
-    let captured: Blob | undefined;
-    vi.spyOn(URL, 'createObjectURL').mockImplementation((b: Blob) => {
-      captured = b;
-      return 'blob:mock';
-    });
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const { captured } = mockObjectUrl();
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
     const state = { ...defaultState(), bookmarks: ['M-PM-001'] };
     await renderCalendar(state);
     fireEvent.click(screen.getByRole('button', { name: /download as json/i }));
-    const text = await captured!.text();
+    const text = await captured()!.text();
     expect(JSON.parse(text).bookmarks).toEqual(['M-PM-001']);
   });
 });
