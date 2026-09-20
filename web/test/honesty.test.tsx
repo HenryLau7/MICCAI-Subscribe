@@ -61,7 +61,9 @@ describe('About page states only what is true', () => {
     const body = document.body.textContent ?? '';
     // The generate-link control ships disabled; nothing can leave via it.
     expect(body).not.toMatch(/generate a calendar subscription link/i);
-    expect(body).toMatch(/nothing is ever sent to a server/i);
+    expect(body).not.toMatch(/nothing is ever sent to a server/i);
+    expect(body).toMatch(/chart on this page loads from Star History/i);
+    expect(body).toMatch(/sends that event’s details to Google/i);
   });
 
   it('describes the path by which data actually does leave the browser', async () => {
