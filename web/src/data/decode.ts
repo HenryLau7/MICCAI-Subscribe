@@ -22,6 +22,26 @@ export function presentationId(paperId: string, kind: PresentationKind): string 
   return kind === 'poster' ? paperId : `${paperId}:oral`;
 }
 
+/**
+ * An organizer link we are willing to render, else ''.
+ *
+ * The bundle is downloaded data, and this value becomes an external
+ * `<a href>` plus the .ics `URL:` property, which RFC 5545 leaves unescaped.
+ * A relative path points "Visit organizer website" back at this app — which
+ * is exactly what shipped when the importer picked up a contact mailto — and
+ * another scheme or a control character is not a website at all. The importer
+ * enforces the same rule; this is the consumer side of it, so a bad value in
+ * a future bundle degrades to "no link" instead of a bad link.
+ */
+export function externalUrl(url: string): string {
+  // Space and C0/DEL, which would break out of an ICS content line.
+  const control = [...url].some((ch) => ch <= ' ' || ch === '\u007f');
+  if (!url || control) return '';
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { return ''; }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? url : '';
+}
+
 export function slugifyName(name: string): string {
   return name
     .normalize('NFKD')
@@ -79,7 +99,8 @@ export function decodeProgram(raw: MinBundle): Program {
 
   const satellite: SatelliteEvent[] = raw.satellite.map(
     ([id, acronym, name, type, theme, room, floor, start, end, url]) => ({
-      id, acronym, name, type: type as SatelliteEvent['type'], theme, room, floor, start, end, url,
+      id, acronym, name, type: type as SatelliteEvent['type'], theme, room, floor, start, end,
+      url: externalUrl(url),
     }),
   );
   const bySatelliteId = new Map(satellite.map((e) => [e.id, e]));

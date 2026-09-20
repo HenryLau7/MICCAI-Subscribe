@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { loadState, saveState, type StoredState } from './storage';
+import { defaultState, loadState, sanitize, saveState, STORAGE_KEY, type StoredState } from './storage';
 
 interface StoreApi {
   state: StoredState;
@@ -35,41 +35,62 @@ function toggleIn<K extends keyof StoredState>(
 
 export function StoreProvider(props: { children: ReactNode }) {
   const [state, setState] = useState<StoredState>(() => loadState());
+  const current = useRef(state);
+  const lastStored = useRef<string | null>(JSON.stringify(state));
 
-  // 首次挂载时 state 就是 loadState() 刚读出来的值，原样写回毫无意义；
-  // 在读取失败退回默认值的场景下，这样写还会把已有数据覆盖掉。跳过首次运行。
-  const firstRender = useRef(true);
+  const readLatest = useCallback(() => {
+    try {
+      const text = localStorage.getItem(STORAGE_KEY);
+      if (text !== lastStored.current) {
+        const next = text === null ? defaultState() : sanitize(JSON.parse(text));
+        if (next) current.current = next;
+        lastStored.current = text;
+      }
+    } catch { /* Storage unavailable: keep in-memory edits. */ }
+    return current.current;
+  }, []);
+
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
-    saveState(state);
-  }, [state]);
+    const sync = (event: StorageEvent) => {
+      if (event.storageArea === localStorage && (event.key === STORAGE_KEY || event.key === null)) {
+        setState(readLatest());
+      }
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, [readLatest]);
+
+  const update = useCallback((change: (previous: StoredState) => StoredState) => {
+    // Read and persist inside the action, before another action or delayed storage event.
+    const next = change(readLatest());
+    current.current = next;
+    if (saveState(next)) lastStored.current = JSON.stringify(next);
+    setState(next);
+  }, [readLatest]);
 
   const toggleBookmark = useCallback((id: string) => {
-    setState((s) => toggleIn(s, 'bookmarks', id));
-  }, []);
+    update((s) => toggleIn(s, 'bookmarks', id));
+  }, [update]);
 
   const toggleFollowAuthor = useCallback((slug: string) => {
-    setState((s) => toggleIn(s, 'followedAuthors', slug));
-  }, []);
+    update((s) => toggleIn(s, 'followedAuthors', slug));
+  }, [update]);
 
   const toggleFollowAffiliation = useCallback((key: string) => {
-    setState((s) => toggleIn(s, 'followedAffiliations', key));
-  }, []);
+    update((s) => toggleIn(s, 'followedAffiliations', key));
+  }, [update]);
 
   const toggleExcluded = useCallback((id: string) => {
-    setState((s) => toggleIn(s, 'excluded', id));
-  }, []);
+    update((s) => toggleIn(s, 'excluded', id));
+  }, [update]);
 
   const setReminderMinutes = useCallback((minutes: number) => {
-    setState((s) => ({ ...s, prefs: { ...s.prefs, reminderMinutes: minutes } }));
-  }, []);
+    update((s) => ({ ...s, prefs: { ...s.prefs, reminderMinutes: minutes } }));
+  }, [update]);
 
   const replaceState = useCallback((next: StoredState) => {
-    setState(next);
-  }, []);
+    update(() => next);
+  }, [update]);
 
   const value = useMemo<StoreApi>(
     () => ({

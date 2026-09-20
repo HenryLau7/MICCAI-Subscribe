@@ -50,6 +50,27 @@ describe('loadProgram', () => {
     vi.unstubAllGlobals();
   });
 
+  it.each(['html', 'schema'])('keeps the last good offline cache after a successful %s response', async (kind) => {
+    const cache = makeCache(makeResponse(raw));
+    vi.stubGlobal('caches', { open: async () => cache });
+    const invalid = kind === 'html'
+      ? makeResponse(null, { jsonError: true })
+      : makeResponse({ ...raw, meta: { ...raw.meta, schema_version: 999 } });
+    fetchMock.mockResolvedValueOnce(invalid).mockRejectedValue(new Error('offline'));
+    await loadProgram();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(cache.put).not.toHaveBeenCalled();
+    expect((await loadProgram()).papers).toHaveLength(raw.papers.length);
+  });
+
+  it('does not cache an invalid first network response', async () => {
+    const cache = makeCache();
+    vi.stubGlobal('caches', { open: async () => cache });
+    fetchMock.mockResolvedValue(makeResponse(null, { jsonError: true }));
+    await expect(loadProgram()).rejects.toThrow();
+    expect(cache.put).not.toHaveBeenCalled();
+  });
+
   it('falls back to the network when the cached bundle has an unsupported schema_version, and evicts the bad entry', async () => {
     const staleBundle = { ...raw, meta: { ...raw.meta, schema_version: 999 } };
     const cache = makeCache(makeResponse(staleBundle));

@@ -24,14 +24,18 @@ export async function loadProgram(): Promise<Program> {
 
   const res = await fetch(DATA_URL);
   if (!res.ok) throw new Error(`program fetch failed: ${res.status}`);
+  const program = decodeProgram((await res.clone().json()) as MinBundle);
   try { await cache?.put(DATA_URL, res.clone()); } catch { /* 配额不足，忽略 */ }
-  return decodeProgram((await res.json()) as MinBundle);
+  return program;
 }
 
 async function revalidate(cache?: Cache): Promise<void> {
   if (!cache) return;
   try {
     const fresh = await fetch(DATA_URL, { cache: 'no-cache' });
-    if (fresh.ok) await cache.put(DATA_URL, fresh);
+    if (fresh.ok) {
+      decodeProgram((await fresh.clone().json()) as MinBundle);
+      await cache.put(DATA_URL, fresh);
+    }
   } catch { /* 离线，保留缓存 */ }
 }

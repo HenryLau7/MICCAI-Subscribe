@@ -5,7 +5,7 @@
   "schema_version": 1,
   "source_revision": "2026-09-10",
   "fetched_at": "2026-09-19T08:17:24.959297+00:00",
-  "generated_at": "2026-09-19T08:19:06+00:00",
+  "generated_at": "2026-09-20T10:59:41+00:00",
   "sources": {
     "main-program.pdf": {
       "url": "https://conferences.miccai.org/2026/files/downloads/MICCAI2026-Main-Conference-Oral-and-Poster-Program.pdf",
@@ -44,6 +44,6 @@
     "sessions": 23,
     "satellite": 111,
     "authors": 5651,
-    "affiliations": 513
+    "affiliations": 471
   }
 }

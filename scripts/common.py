@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from urllib.parse import urlsplit
 
 # --- text normalisation -----------------------------------------------------
 
@@ -23,6 +24,30 @@ def title_key(s: str) -> str:
 
 def slug(s: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", fold(s).lower()).strip("-")
+
+
+_URL_CONTROL = re.compile(r"[\x00-\x20\x7f]")
+
+
+def external_url(href: str | None) -> str | None:
+    """An organizer link we are willing to publish, else None.
+
+    The app renders this as an external `<a href>` and writes it into the .ics
+    `URL:` property, which RFC 5545 leaves unescaped. So only an absolute
+    http(s) URL with a host qualifies: a relative path points the "organizer
+    website" button back at our own domain, another scheme is not a website,
+    and a control character in either could break out of the ICS line.
+    """
+    if not href:
+        return None
+    href = href.strip()
+    if not href or _URL_CONTROL.search(href):
+        return None
+    try:
+        parsed = urlsplit(href)
+    except ValueError:
+        return None
+    return href if parsed.scheme in ("http", "https") and parsed.hostname else None
 
 
 # --- presenter string parsing ----------------------------------------------
@@ -63,12 +88,6 @@ def _country_candidate(seg: str) -> str:
     c = re.sub(r"\s+SAR$", "", c, flags=re.I)
     return c.strip()
 
-_AFF_NOISE = re.compile(
-    r"^(the\s+|department of\s+|dept\.?\s+of\s+|school of\s+|college of\s+|"
-    r"institute of\s+|faculty of\s+|division of\s+)",
-    re.I,
-)
-
 
 def split_presenter(raw: str) -> tuple[str, str, str | None]:
     """'Yuan Xue, The Ohio State University, United States' -> (name, affiliation, country)."""
@@ -93,16 +112,11 @@ def canonical_affiliation(aff: str) -> str:
     """Conservative canonical key for grouping affiliation spellings."""
     if not aff:
         return ""
-    # Multi-part affiliations ("Dept of X, Y University") -> keep the most
-    # institution-looking segment, else the last one.
+    # A generic school/department name cannot identify its parent institution.
+    # Prefer an explicit university; otherwise preserve the full affiliation.
     segs = [s.strip() for s in aff.split(",") if s.strip()]
-    pick = segs[-1]
-    for s in segs:
-        if re.search(r"universit|institute|college|hospital|school|academy|centre|center|laborator|inria|cnrs|mbzuai|postech|kaist|eth|epfl",
-                     s, re.I):
-            pick = s
-            break
-    pick = _AFF_NOISE.sub("", fold(pick).strip())
+    pick = next((s for s in segs if re.search(r"\buniversit\w*\b|\buniv\b", s, re.I)), aff)
+    pick = re.sub(r"^the\s+", "", fold(pick).strip(), flags=re.I)
     pick = re.sub(r"\bUniv\.?\b", "University", pick, flags=re.I)
     return slug(pick)
 

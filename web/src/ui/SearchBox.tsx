@@ -28,6 +28,15 @@ export function SearchBox({ targetPath, autoFocus, placeholder, id = 'search' }:
     setValue(urlQuery);
   }
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const selection = location.state?.searchSelection;
+    if (selection && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.setSelectionRange(selection.start, selection.end, selection.direction);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     return () => {
@@ -42,7 +51,14 @@ export function SearchBox({ targetPath, autoFocus, placeholder, id = 'search' }:
     timeoutRef.current = setTimeout(() => {
       const dest = targetPath ?? location.pathname;
       const qs = next.trim() ? `?q=${encodeURIComponent(next)}` : '';
-      navigate(`${dest}${qs}`, { replace: dest === location.pathname });
+      const input = inputRef.current;
+      const searchSelection = dest !== location.pathname && input === document.activeElement && input
+        ? { start: input.selectionStart, end: input.selectionEnd, direction: input.selectionDirection }
+        : null;
+      navigate(`${dest}${qs}`, {
+        replace: dest === location.pathname,
+        state: searchSelection ? { searchSelection } : null,
+      });
     }, DEBOUNCE_MS);
   }
 
@@ -52,6 +68,7 @@ export function SearchBox({ targetPath, autoFocus, placeholder, id = 'search' }:
         Search papers, authors, or satellite events
       </label>
       <input
+        ref={inputRef}
         id={id}
         type="search"
         enterKeyHint="search"

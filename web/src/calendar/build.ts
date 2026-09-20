@@ -1,5 +1,6 @@
 import type { Program } from '../data/types';
 import type { ScheduleDay, ScheduleItem } from '../store/schedule';
+import { bySlot } from '../store/schedule';
 import type { IcsEvent } from './ics';
 
 const DOMAIN = 'miccaisubscribe.com';
@@ -49,8 +50,7 @@ export function scheduleToEvents(
         : `Your ${group.length} bookmarked talk(s) in this session:`,
       '',
     ];
-    for (const item of group.sort((a, b) =>
-      (a.presentation!.orderInSession || 0) - (b.presentation!.orderInSession || 0))) {
+    for (const item of group.sort((a, b) => bySlot(a.presentation!, b.presentation!))) {
       const pr = item.presentation!;
       const paper = item.paper!;
       const tag = isPoster

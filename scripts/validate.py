@@ -9,6 +9,8 @@ from __future__ import annotations
 import re
 import sys
 
+from common import external_url
+
 BOARD_RE = re.compile(r"^[MTW]-(?:AM|PM)-\d{3}$")
 
 
@@ -72,6 +74,20 @@ def validate(bundle: dict, unparsed: list, unmatched_sat: list) -> tuple[list, l
               f"only {rate:.0%} of oral talks linked to a poster record (expected >=95%)")
 
     check(95 <= len(sat) <= 130, f"satellite event count out of range: {len(sat)}")
+    # Two events can share a room and a start slot, and the id is also a
+    # bookmark key living in localStorage across refreshes. A collision made
+    # one event replace the other everywhere it is opened, bookmarked or
+    # exported, and shipped that way unnoticed.
+    sat_ids = [e["id"] for e in sat]
+    dupe_sat = sorted({i for i in sat_ids if sat_ids.count(i) > 1})
+    check(not dupe_sat,
+          f"{len(dupe_sat)} duplicate satellite event id(s) — one event replaces the other "
+          f"everywhere it is opened, bookmarked or exported: {dupe_sat[:10]}")
+
+    bad_url = [e["id"] for e in sat if e.get("url") and external_url(e["url"]) != e["url"]]
+    check(not bad_url,
+          f"{len(bad_url)} satellite event(s) whose url is not an absolute http(s) link — it "
+          f"ships as the 'organizer website' button and as the .ics URL property: {bad_url[:10]}")
     no_room = [e["id"] for e in sat if not e.get("room")]
     check(not no_room,
           f"{len(no_room)} satellite event(s) missing room (would emit a malformed "

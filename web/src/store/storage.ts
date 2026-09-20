@@ -62,6 +62,9 @@ export function loadState(): StoredState {
   return sanitize(parsed) ?? defaultState();
 }
 
-export function saveState(state: StoredState): void {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* 无痕模式，只活在内存里 */ }
+export function saveState(state: StoredState): boolean {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
+  } catch { return false; }
 }

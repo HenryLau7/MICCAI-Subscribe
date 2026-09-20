@@ -78,6 +78,15 @@ describe('buildCalendar', () => {
 });
 
 describe('scheduleToEvents', () => {
+  it('exports mixed sessions with all orals before spotlights', () => {
+    const bookmarks = program.presentations.filter((p) => p.sessionId === 'O1A').map((p) => p.id);
+    const [event] = scheduleToEvents(program, buildSchedule(program, { ...defaultState(), bookmarks }), 15);
+    expect(event.description.match(/\[(?:Oral|Spotlight) \d+\]/g)).toEqual([
+      ...Array.from({ length: 6 }, (_, i) => `[Oral ${i + 1}]`),
+      ...Array.from({ length: 6 }, (_, i) => `[Spotlight ${i + 1}]`),
+    ]);
+  });
+
   it('emits ONE event per session even with several talks bookmarked in it', () => {
     const a = program.presentations.find((p) => p.sessionId === 'O1A' && p.kind !== 'poster')!;
     const b = program.presentations.filter((p) => p.sessionId === 'O1A' && p.kind !== 'poster')[1];

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 import fitz
@@ -21,7 +22,7 @@ import yaml
 from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import fold, slug
+from common import external_url, fold, slug
 
 TZ = "+02:00"
 DAY_RE = re.compile(r"Day (\d) –\s*\w+,\s*(\w+)\s+(\d{1,2}),\s*(\d{4})")
@@ -54,7 +55,15 @@ def parse_listing(path: Path, kind: str) -> list[dict]:
             acronym = " ".join(cells[0].get_text(" ", strip=True).split())
             if not acronym:
                 continue
-            link = tr.find("a", href=True)
+            # Only the acronym/name cells. The contact cell holds a mailto
+            # (Cloudflare rewrites it to a relative /cdn-cgi/l/email-protection
+            # path), and taking the row's first <a> published that as iMIMIC's
+            # official website.
+            url = next(
+                (u for cell in cells[:2] for a in cell.find_all("a", href=True)
+                 if (u := external_url(a["href"]))),
+                None,
+            )
             out.append({
                 "acronym": acronym,
                 "key": norm_acronym(acronym),
@@ -62,7 +71,7 @@ def parse_listing(path: Path, kind: str) -> list[dict]:
                 "theme": " ".join(cells[2].get_text(" ", strip=True).split()) if len(cells) > 2 else "",
                 "day": " ".join(cells[3].get_text(" ", strip=True).split()) if len(cells) > 3 else "",
                 "contact": " ".join(cells[4].get_text(" ", strip=True).split()) if len(cells) > 4 else "",
-                "url": link["href"] if link else None,
+                "url": url,
                 "type": kind,
             })
         break
@@ -181,6 +190,15 @@ def build(raw_dir: Path, alias_path: Path) -> tuple[list[dict], list[str]]:
             "contact": info["contact"] if info else None,
             "matched": info is not None,
         })
+    # date+room+slot is not unique: one slot can hold several events (two pairs
+    # do today), and the frontend keys everything — links, bookmarks, .ics — by
+    # id, so a collision made one event stand in for the other. Only a colliding
+    # id gains the acronym, which keeps every already-bookmarked id stable;
+    # validate.py fails the build if any duplicate survives.
+    id_counts = Counter(e["id"] for e in events)
+    for event in events:
+        if id_counts[event["id"]] > 1:
+            event["id"] += ":" + slug(event["acronym"])
     events.sort(key=lambda e: (e["start"], e["room"]))
     return events, unmatched
 
