@@ -1,6 +1,21 @@
+# Python
 __pycache__/
 *.pyc
-.DS_Store
+.venv/
+
+# Node / build output
 node_modules/
 dist/
-.venv/
+
+# macOS
+.DS_Store
+
+# Agent working files and internal process documents.
+# The public release is the code and the data pipeline; the planning,
+# review and handoff artifacts produced while building it stay local.
+.superpowers/
+docs/superpowers/
+docs/REVIEW-*.md
+docs/RUNBOOK.md
+HANDOFF.md
+SPEC.md

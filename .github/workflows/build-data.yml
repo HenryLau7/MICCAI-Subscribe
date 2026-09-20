@@ -5,7 +5,7 @@ name: Daily data refresh
 # changed. NEVER auto-merges — the official main-program PDF changed its
 # whole layout mid-flight once already (2026-09-08 -> 2026-09-10), silently
 # dropping a column; a human must read the diff before it ships. See
-# docs/RUNBOOK.md for what to do when this workflow fails or opens a PR.
+# README.md for what to do when this workflow fails or opens a PR.
 
 on:
   schedule:
@@ -86,7 +86,7 @@ jobs:
           {
             echo "Automated daily refresh from the official MICCAI 2026 sources (\`scripts/fetch.py\` + \`scripts/build.py\`)."
             echo
-            echo "**Do not auto-merge.** Read the diff before merging — the official PDF changed layout mid-flight once already, and \`validate.py\`'s gate passing only means the shape looked sane, not that the content is right (see the pre-launch checklist in \`docs/RUNBOOK.md\`)."
+            echo "**Do not auto-merge.** Read the diff before merging — the official PDF changed layout mid-flight once already, and \`validate.py\`'s gate passing only means the shape looked sane, not that the content is right."
             echo
             echo "\`diff-report.md\` below covers paper adds/removals/retitles and oral/poster session time or room moves only. It does **not** cover satellite-event or author/affiliation changes — for those, review the \`data/processed/program.json\` and \`data/raw/\` diffs in the Files Changed tab."
             echo
