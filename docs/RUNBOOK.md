@@ -197,7 +197,50 @@ list of environment variables (`PREVIEW_PORT`, `PREVIEW_HOST`, `CDP_PORT`) —
 
 These cannot be verified from this environment and were not silently marked
 done. Someone with a phone, the built site, and about 30 minutes needs to
-walk through all of them before the satellite events start:
+walk through all of them before the satellite events start.
+
+The first two are **post-deploy checks** — they cannot be run until the site
+is actually live, so do them immediately after every deploy, not just once
+before launch:
+
+- [ ] **Verify the cache headers actually landed on a deep route, not just
+      the root.** `web/public/_headers` sets `Cache-Control: no-cache` on
+      every known app route (`/paper/*`, `/search`, `/schedule`, ...) as well
+      as on `/` and `/index.html`, specifically because Cloudflare's own
+      docs do not say whether `_headers` matching happens against the
+      original request path or the post-`_redirects`-rewrite destination —
+      that could only be settled by deploying, which is exactly what this
+      check is for:
+      ```bash
+      curl -sI https://miccaisubscribe.com/paper/M-PM-001 | grep -i cache-control
+      ```
+      **Good answer:** `cache-control: no-cache` (or another header that
+      forces revalidation — anything that is *not* a `max-age`/`public`
+      value with no revalidation). **If it comes back cacheable instead**
+      (missing entirely, or `public, max-age=...` with no `no-cache`/
+      `must-revalidate`): the rules in `_headers` are not matching that
+      route. Don't guess — add a Cloudflare dashboard **Cache Rule** (zone
+      level, under Caching -> Cache Rules) that forces `Cache-Control:
+      no-cache` on `text/html` responses as a fallback that doesn't depend
+      on `_headers`' path-matching ambiguity at all, then re-run this same
+      `curl` to confirm it took effect.
+- [ ] **Re-measure LCP against the live edge, throttled** — not against
+      local `vite preview` (which is what this task's automated QA used; see
+      the task report). Run Lighthouse (mobile, simulated or real
+      throttling) against `https://miccaisubscribe.com/`. **This is not
+      expected to be a pure local-testing artifact**: the critical path is
+      roughly 98 KB gzip of JS plus fetching and decoding the entire program
+      bundle before first meaningful paint, which is inherent to this
+      client-rendered architecture, not something the edge alone fixes. The
+      edge will likely improve on the ~2.5 s measured locally, but probably
+      not down to the SPEC's 1.5 s target. **The mitigation already built
+      in is the service worker**: a *returning* visitor is served the shell
+      and (if cached) the program data straight from Cache Storage and does
+      not pay this cost — so the real risk is concentrated on a visitor's
+      **first** load, on venue Wi-Fi, which is exactly the worst network for
+      it. Record the actual number here and judge plainly whether that
+      first-visit cost is acceptable; do not round it down or explain it
+      away.
 
 - [ ] **Real calendar import.** Download the `.ics` export and import it into
       **Apple Calendar, Google Calendar, and Outlook** (at least one desktop
@@ -226,5 +269,5 @@ walk through all of them before the satellite events start:
 
 None of the automated QA in this task's report (data-correctness spot
 checks, the offline gate, the test suite across timezones, bundle size,
-Lighthouse/axe scores) substitutes for these three. They need a human, a
-real device, and a real network.
+Lighthouse/axe scores) substitutes for these five. They need either a live
+deploy, a human, a real device, or a real network — several need all four.

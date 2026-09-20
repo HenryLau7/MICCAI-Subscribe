@@ -13,11 +13,58 @@
 #     revalidation during the daily data refresh.
 #   - Hashed build assets under /assets/* never change contents for a given
 #     filename, so they're safe to cache forever.
+#
+# Every app route below (/search, /paper/*, /schedule, ...) is served as
+# index.html content via the _redirects 200 rewrite. Cloudflare's docs do not
+# say whether _headers matching happens against the original request path or
+# the rewritten destination, and that is not something we can resolve without
+# deploying. If it's unresolved and left to the catch-all `/*` below (which
+# sets no Cache-Control at all), a visitor who lands directly on a deep link
+# like /paper/M-PM-001 could get pinned to a cached index.html for the whole
+# conference, never picking up a data refresh. So every known route prefix
+# gets its own explicit no-cache rule here, redundantly with / and
+# /index.html: if Cloudflare matches pre-rewrite, these are what cover it; if
+# it matches post-rewrite, they're harmless duplicates of the /index.html
+# rule. Either way the ambiguity stops being able to matter. Add a line here
+# for any new top-level route added to src/App.tsx.
 
 /index.html
   Cache-Control: no-cache
 
 /
+  Cache-Control: no-cache
+
+/search
+  Cache-Control: no-cache
+
+/paper/*
+  Cache-Control: no-cache
+
+/author/*
+  Cache-Control: no-cache
+
+/affiliation/*
+  Cache-Control: no-cache
+
+/session/*
+  Cache-Control: no-cache
+
+/schedule
+  Cache-Control: no-cache
+
+/satellite
+  Cache-Control: no-cache
+
+/satellite/*
+  Cache-Control: no-cache
+
+/calendar
+  Cache-Control: no-cache
+
+/import
+  Cache-Control: no-cache
+
+/about
   Cache-Control: no-cache
 
 /sw.js
