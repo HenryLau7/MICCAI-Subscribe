@@ -50,6 +50,10 @@ def validate(bundle: dict, unparsed: list, unmatched_sat: list) -> tuple[list, l
               f"only {rate:.0%} of oral talks linked to a poster record (expected >=95%)")
 
     check(95 <= len(sat) <= 130, f"satellite event count out of range: {len(sat)}")
+    no_room = [e["id"] for e in sat if not e.get("room")]
+    check(not no_room,
+          f"{len(no_room)} satellite event(s) missing room (would emit a malformed "
+          f"LOCATION like \", Strasbourg Convention Center\" in the .ics export): {no_room[:10]}")
     if unmatched_sat:
         warnings.append(f"{len(unmatched_sat)} satellite acronyms unresolved: {unmatched_sat}")
 

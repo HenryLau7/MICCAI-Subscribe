@@ -376,11 +376,34 @@ async function main() {
       `document.body.innerText.includes('MICCAI Subscribe')`,
       10000,
     );
-    const homeText = await evaluate('document.body.innerText').catch(() => '');
+    // Structural, not just "some text rendered": a generic error boundary that
+    // preserves the app shell (brand heading, nav chrome) would satisfy brand
+    // text + a character count. The satellite-event count shown on the home
+    // page ("N workshops, challenges & tutorials") is computed from
+    // program.satellite.length in the DECODED program — it can only be
+    // correct if the real bundle was parsed and rendered. Cross-check it
+    // against the satellite array length actually sitting in Cache Storage
+    // right now, rather than hard-coding a number that would go stale (and
+    // silently stop testing anything) the next time data/processed/program.json
+    // changes.
+    const satelliteCountCheck = await evaluate(
+      `(async () => {
+        const match = document.body.innerText.match(/(\\d+)\\s+workshops, challenges/);
+        if (!match) return { ok: false, reason: 'no "N workshops, challenges" text found' };
+        const cache = await caches.open('miccai-program-v1');
+        const resp = await cache.match('/data/program.min.json');
+        if (!resp) return { ok: false, reason: 'no cached program bundle to cross-check against' };
+        const bundle = await resp.json();
+        const shown = Number(match[1]);
+        const actual = bundle.satellite.length;
+        return { ok: shown === actual, reason: \`page shows \${shown}, cached bundle has \${actual}\` };
+      })()`,
+      true,
+    ).catch((e) => ({ ok: false, reason: String(e) }));
     record(
-      'home page renders while offline (reload)',
-      homeReady && homeText.length > 100,
-      `${homeText.length} chars`,
+      'home page renders real decoded data while offline (reload) — shown satellite count matches the cached bundle',
+      homeReady && satelliteCountCheck.ok,
+      satelliteCountCheck.reason,
     );
 
     const scheduleNav = await evaluate(
@@ -416,11 +439,32 @@ async function main() {
     const detailReady =
       !!detailNav &&
       (await waitForCondition(`location.pathname.startsWith('/paper/')`, 10000));
-    const detailText = await evaluate('document.body.innerText').catch(() => '');
+    // Structural, not just "the URL changed and some text appeared": a stale
+    // shell or error boundary would satisfy pathname + a character count too.
+    // Look up the actual paper's title from the cached bundle by the id in
+    // the URL we just navigated to, and assert THAT specific title is what
+    // rendered — content only a correctly decoded, correctly routed detail
+    // page can produce.
+    const detailCheck = await evaluate(
+      `(async () => {
+        const id = decodeURIComponent(location.pathname.replace(/^\\/paper\\//, ''));
+        if (!id) return { ok: false, reason: 'no paper id in pathname' };
+        const cache = await caches.open('miccai-program-v1');
+        const resp = await cache.match('/data/program.min.json');
+        if (!resp) return { ok: false, reason: 'no cached program bundle to cross-check against' };
+        const bundle = await resp.json();
+        const paper = bundle.papers.find((p) => p[0] === id);
+        if (!paper) return { ok: false, reason: \`paper \${id} not found in cached bundle\` };
+        const title = paper[1];
+        const ok = document.body.innerText.includes(title);
+        return { ok, reason: ok ? \`rendered title for \${id}\` : \`title for \${id} ("\${title}") not found in rendered page\` };
+      })()`,
+      true,
+    ).catch((e) => ({ ok: false, reason: String(e) }));
     record(
-      'paper detail page renders while offline',
-      !!detailNav && detailReady && detailText.length > 50,
-      `${detailNav} — ${detailText.length} chars`,
+      'paper detail page renders the correct paper\'s title while offline',
+      !!detailNav && detailReady && detailCheck.ok,
+      `${detailNav} — ${detailCheck.reason}`,
     );
 
     record('no console errors or exceptions during the offline run', consoleErrors.length === 0, consoleErrors.join(' | '));
