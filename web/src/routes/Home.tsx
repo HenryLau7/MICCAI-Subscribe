@@ -40,7 +40,9 @@ export function Home() {
         <p className="text-xs text-[var(--fg-muted)]">Program revised {program.meta.sourceRevision}</p>
       </header>
 
-      <section aria-label="Search">
+      {/* The form itself carries role="search", so this wrapper stays a plain
+          container — an aria-label here would nest two search landmarks. */}
+      <section>
         <SearchBox targetPath="/search" autoFocus placeholder="Search title, author, board number…" />
         <p className="mt-2 text-xs text-[var(--fg-muted)]">
           Try a paper title, an author&rsquo;s name, an institution, or a board number like M-PM-001.

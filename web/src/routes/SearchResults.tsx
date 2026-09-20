@@ -48,8 +48,8 @@ export function SearchResults() {
 
       {!query.trim() ? (
         <EmptyState
-          title="Start typing to search"
-          description="Search by paper title, author, institution, or board number."
+          title="Enter a search term"
+          description="Type a paper title, author, institution, or board number, then press Search."
         />
       ) : results.length === 0 ? (
         <EmptyState

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 interface SearchBoxProps {
@@ -10,9 +10,14 @@ interface SearchBoxProps {
   id?: string;
 }
 
-const DEBOUNCE_MS = 300;
-
-/** Controlled search input. Debounces 300ms before writing `?q=` to the URL. */
+/**
+ * Controlled search input with an explicit submit.
+ *
+ * Typing is deliberately inert: the query reaches the URL only when the form
+ * is submitted, by the Search button or the phone keyboard's Search key. An
+ * earlier version committed on a 300 ms debounce, which meant typing on Home
+ * navigated out from under you mid-word.
+ */
 export function SearchBox({ targetPath, autoFocus, placeholder, id = 'search' }: SearchBoxProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -27,48 +32,24 @@ export function SearchBox({ targetPath, autoFocus, placeholder, id = 'search' }:
     setSyncedQuery(urlQuery);
     setValue(urlQuery);
   }
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const selection = location.state?.searchSelection;
-    if (selection && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.setSelectionRange(selection.start, selection.end, selection.direction);
-    }
-  }, [location.state]);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
-    const next = event.target.value;
-    setValue(next);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      const dest = targetPath ?? location.pathname;
-      const qs = next.trim() ? `?q=${encodeURIComponent(next)}` : '';
-      const input = inputRef.current;
-      const searchSelection = dest !== location.pathname && input === document.activeElement && input
-        ? { start: input.selectionStart, end: input.selectionEnd, direction: input.selectionDirection }
-        : null;
-      navigate(`${dest}${qs}`, {
-        replace: dest === location.pathname,
-        state: searchSelection ? { searchSelection } : null,
-      });
-    }, DEBOUNCE_MS);
+    setValue(event.target.value);
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const dest = targetPath ?? location.pathname;
+    const qs = value.trim() ? `?q=${encodeURIComponent(value)}` : '';
+    navigate(`${dest}${qs}`, { replace: dest === location.pathname });
   }
 
   return (
-    <div className="w-full">
+    <form role="search" onSubmit={handleSubmit} className="flex w-full gap-2">
       <label htmlFor={id} className="sr-only">
         Search papers, authors, or satellite events
       </label>
       <input
-        ref={inputRef}
         id={id}
         type="search"
         enterKeyHint="search"
@@ -78,8 +59,14 @@ export function SearchBox({ targetPath, autoFocus, placeholder, id = 'search' }:
         value={value}
         onChange={handleChange}
         placeholder={placeholder ?? 'Search title, author, board number…'}
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 text-base text-[var(--fg)] placeholder:text-[var(--fg-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        className="min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 text-base text-[var(--fg)] placeholder:text-[var(--fg-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       />
-    </div>
+      <button
+        type="submit"
+        className="inline-flex min-h-11 shrink-0 items-center rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-fg)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+      >
+        Search
+      </button>
+    </form>
   );
 }

@@ -51,7 +51,7 @@ describe('SearchResults', () => {
   it('treats an absent ?q= as "no query yet", distinct from zero results', () => {
     renderAt('/search');
 
-    expect(screen.getByText(/Start typing to search/i)).toBeInTheDocument();
+    expect(screen.getByText(/Enter a search term/i)).toBeInTheDocument();
     expect(screen.queryByText(/No results for/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/^Papers \(/)).not.toBeInTheDocument();
   });
@@ -59,7 +59,7 @@ describe('SearchResults', () => {
   it('treats a blank ?q= the same as absent — "no query yet", not zero results', () => {
     renderAt('/search?q=');
 
-    expect(screen.getByText(/Start typing to search/i)).toBeInTheDocument();
+    expect(screen.getByText(/Enter a search term/i)).toBeInTheDocument();
     expect(screen.queryByText(/No results for/i)).not.toBeInTheDocument();
   });
 });
