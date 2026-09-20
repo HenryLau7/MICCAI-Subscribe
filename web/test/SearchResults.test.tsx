@@ -69,9 +69,13 @@ describe('the "50+" result count does not overclaim', () => {
   // rows — including when 50 was the true total — so it claimed hits that did
   // not exist. It now fetches one extra hit purely to tell the two apart.
   //
-  // Deliberately no "exactly 50" fixture: no term has exactly 50 hits today,
-  // and pinning one would break on the next daily data refresh. These two
-  // bracket the boundary instead.
+  // These two exercise the REAL engine, but neither one alone catches the bug:
+  // both also pass against the pre-fix code, because the overclaim only shows
+  // at a true total of exactly 50 and no real query has exactly 50 hits (a
+  // fixture pinned to one would break on the next daily data refresh). The
+  // boundary itself is covered, red-green, in search-count-boundary.test.tsx
+  // with a stubbed engine. These guard that the real engine still feeds the
+  // count correctly on either side of it.
   it('shows the + when there really are more than 50', () => {
     renderAt('/search?q=segmentation');   // 354 hits
     expect(screen.getByRole('status')).toHaveTextContent(/^50\+ results for/);
