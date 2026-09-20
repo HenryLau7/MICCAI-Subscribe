@@ -18,6 +18,18 @@
   --warning: #92400e;
   --warning-bg: #fffbeb;
   --warning-border: #fde68a;
+  /* Activity-type tiers (§10.1 类型编码): talk = oral/spotlight, poster,
+     satellite = workshop/challenge/tutorial. Three functional groups, not
+     six hues — see TypeBadge.tsx for why. */
+  --type-talk: #1471b8;
+  --type-talk-bg: #ecf6fd;
+  --type-talk-border: #b6ddfb;
+  --type-poster: #0e7c75;
+  --type-poster-bg: #ecfdfc;
+  --type-poster-border: #b6fbf7;
+  --type-satellite: #c5169a;
+  --type-satellite-bg: #fdecf9;
+  --type-satellite-border: #fbb6ea;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,6 +47,15 @@
     --warning: #fcd34d;
     --warning-bg: #2a2008;
     --warning-border: #5c4a1f;
+    --type-talk: #259af4;
+    --type-talk-bg: #0e1e2a;
+    --type-talk-border: #1f415c;
+    --type-poster: #25f4e6;
+    --type-poster-bg: #0e2a28;
+    --type-poster-border: #1f5c58;
+    --type-satellite: #f425c0;
+    --type-satellite-bg: #2a0e23;
+    --type-satellite-border: #5c1f4d;
   }
 }
 

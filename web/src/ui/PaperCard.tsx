@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Paper, Program } from '../data/types';
 import { formatDay, formatTime } from '../store/schedule';
 import { BookmarkButton } from './BookmarkButton';
+import { TypeBadge } from './TypeBadge';
 
 function AuthorLine({ paper }: { paper: Paper }) {
   const presenters = new Set(paper.presenters);
@@ -60,7 +61,8 @@ export function PaperCard({ program, paper }: { program: Program; paper: Paper }
               className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] px-3 py-2"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-[var(--fg)]">{session.name}</p>
+                <TypeBadge type={presentation.kind} />
+                <p className="mt-1 truncate text-sm font-medium text-[var(--fg)]">{session.name}</p>
                 <p className="text-xs text-[var(--fg-muted)]">
                   {formatDay(session.start)} · {formatTime(session.start)}–{formatTime(session.end)}
                   {isPoster

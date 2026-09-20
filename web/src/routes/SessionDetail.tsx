@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useProgram } from '../ui/ProgramContext';
 import { EmptyState } from '../ui/EmptyState';
 import { PresentationRow } from '../ui/PresentationRow';
+import { TypeBadge } from '../ui/TypeBadge';
 import { formatDay, formatTime } from '../store/schedule';
 
 export function SessionDetail() {
@@ -33,9 +34,7 @@ export function SessionDetail() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6 px-4 pb-16 pt-6">
       <header className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">
-          {isPoster ? 'Poster session' : 'Oral session'}
-        </p>
+        <TypeBadge type={session.kind} className="w-fit" />
         <h1 className="text-xl font-semibold leading-snug text-[var(--fg)]">{session.name}</h1>
         <p className="text-sm text-[var(--fg-muted)]">
           {formatDay(session.start)} · {formatTime(session.start)}–{formatTime(session.end)}

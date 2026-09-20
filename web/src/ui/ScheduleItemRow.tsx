@@ -5,9 +5,7 @@ import { formatTime } from '../store/schedule';
 import { useStore } from '../store/StoreProvider';
 import { BookmarkButton } from './BookmarkButton';
 import { ConflictBadge } from './ConflictBadge';
-
-const KIND_LABEL: Record<string, string> = { poster: 'Poster', oral: 'Oral', spotlight: 'Spotlight' };
-const SATELLITE_LABEL: Record<string, string> = { workshop: 'Workshop', challenge: 'Challenge', tutorial: 'Tutorial' };
+import { TypeBadge, type ActivityType } from './TypeBadge';
 
 /**
  * One row in the day's schedule. What it shows depends on the item's shape:
@@ -38,19 +36,22 @@ export function ScheduleItemRow({ item }: { item: ScheduleItem }) {
   let titleNode: ReactNode;
   let metaNode: ReactNode;
   let locationText: string;
+  let activityType: ActivityType;
 
   if (item.satellite) {
     const sat = item.satellite;
+    activityType = sat.type;
     titleNode = (
       <span className="truncate text-sm font-medium text-[var(--fg)]">
         {sat.name} ({sat.acronym})
       </span>
     );
-    metaNode = <span className="text-xs text-[var(--fg-muted)]">{SATELLITE_LABEL[sat.type] ?? sat.type}</span>;
+    metaNode = null;
     locationText = sat.room ? `${sat.room}${sat.floor ? `, ${sat.floor}` : ''}` : 'Location not published';
   } else if (item.presentation && item.paper && item.session) {
     const { presentation, paper, session } = item;
     const isPoster = session.kind === 'poster';
+    activityType = presentation.kind;
     titleNode = (
       <Link
         to={`/paper/${paper.id}`}
@@ -67,8 +68,6 @@ export function ScheduleItemRow({ item }: { item: ScheduleItem }) {
         >
           {session.name}
         </Link>
-        {' · '}
-        {KIND_LABEL[presentation.kind] ?? presentation.kind}
         {presentation.orderInSession > 0 ? ` · #${presentation.orderInSession} in session` : ''}
       </span>
     );
@@ -89,13 +88,14 @@ export function ScheduleItemRow({ item }: { item: ScheduleItem }) {
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold text-[var(--fg-muted)]">{timeRange}</p>
           <p className="truncate">{titleNode}</p>
-          <p className="truncate">{metaNode}</p>
+          {metaNode && <p className="truncate">{metaNode}</p>}
           <p className="text-xs text-[var(--fg-muted)]">{locationText}</p>
         </div>
         <BookmarkButton presentationId={item.key} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <TypeBadge type={activityType} />
         <ConflictBadge conflicts={item.conflicts} />
         {isFollowDerived && (
           <span id={sourceLabelId} className="text-xs text-[var(--fg-muted)]">

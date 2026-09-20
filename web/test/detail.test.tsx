@@ -360,5 +360,12 @@ describe('SessionDetail', () => {
     const lateIdx = rows.findIndex((row) => within(row).queryByText(lateOrderPaper.title));
     expect(earlyIdx).toBeGreaterThanOrEqual(0);
     expect(earlyIdx).toBeLessThan(lateIdx);
+
+    // Each row's own presentation kind must show as text, not just a colour —
+    // O1A genuinely interleaves an oral track and a spotlight track, so this
+    // is a real fixture proving the two kinds render distinct labels within
+    // the very same session, not merely that some label exists somewhere.
+    expect(within(rows[earlyIdx]).getByText('Spotlight')).toBeInTheDocument();
+    expect(within(rows[lateIdx]).getByText('Oral')).toBeInTheDocument();
   });
 });

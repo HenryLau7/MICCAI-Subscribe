@@ -3,17 +3,13 @@ import { useProgram } from '../ui/ProgramContext';
 import { EmptyState } from '../ui/EmptyState';
 import { BookmarkButton } from '../ui/BookmarkButton';
 import { DownloadIcsButton } from '../ui/DownloadIcsButton';
+import { TypeBadge } from '../ui/TypeBadge';
 import { googleCalendarUrl } from '../calendar/google';
 import { formatDay, formatTime } from '../store/schedule';
 import type { IcsEvent } from '../calendar/ics';
 import type { SatelliteEvent } from '../data/types';
 
 const VENUE = 'Strasbourg Convention Center, Strasbourg, France';
-const TYPE_LABEL: Record<SatelliteEvent['type'], string> = {
-  workshop: 'Workshop',
-  challenge: 'Challenge',
-  tutorial: 'Tutorial',
-};
 
 /** Mirrors calendar/build.ts's satellite-event branch, for exactly this one event. */
 function toIcsEvent(event: SatelliteEvent): IcsEvent {
@@ -62,9 +58,7 @@ export function SatelliteDetail() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6 px-4 pb-16 pt-6">
       <header className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">
-          {TYPE_LABEL[event.type] ?? event.type}
-        </p>
+        <TypeBadge type={event.type} className="w-fit" />
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-xl font-semibold leading-snug text-[var(--fg)]">
             {event.acronym && <span className="block">{event.acronym}</span>}

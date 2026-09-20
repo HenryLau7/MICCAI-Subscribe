@@ -2,12 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Presentation, Program } from '../data/types';
 import { formatDay, formatTime } from '../store/schedule';
 import { BookmarkButton } from './BookmarkButton';
-
-const KIND_LABEL: Record<Presentation['kind'], string> = {
-  poster: 'Poster',
-  oral: 'Oral',
-  spotlight: 'Spotlight',
-};
+import { TypeBadge } from './TypeBadge';
 
 interface PresentationRowProps {
   program: Program;
@@ -33,11 +28,11 @@ export function PresentationRow({ program, presentation, showPaper }: Presentati
   if (!session || !paper) return null;
 
   const isPoster = session.kind === 'poster';
-  const kindLabel = KIND_LABEL[presentation.kind];
 
   return (
     <li className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] px-3 py-2">
       <div className="min-w-0">
+        <TypeBadge type={presentation.kind} className="mb-1" />
         {showPaper ? (
           <>
             <p className="truncate text-sm font-medium text-[var(--fg)]">
@@ -66,9 +61,7 @@ export function PresentationRow({ program, presentation, showPaper }: Presentati
           </p>
         )}
         <p className="text-xs text-[var(--fg-muted)]">
-          {kindLabel}
-          {presentation.orderInSession > 0 ? ` · #${presentation.orderInSession} in session` : ''}
-          {' · '}
+          {presentation.orderInSession > 0 ? `#${presentation.orderInSession} in session · ` : ''}
           {formatDay(session.start)} · {formatTime(session.start)}–{formatTime(session.end)}
           {isPoster
             ? ' · hall not published — find the board number'

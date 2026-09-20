@@ -208,6 +208,30 @@ describe('ScheduleItemRow', () => {
     expect(screen.getByText(new RegExp(`board ${posterPaper.id}`, 'i'))).toBeInTheDocument();
     expect(screen.getByText(/hall not published/i)).toBeInTheDocument();
   });
+
+  it("shows the row's activity-type badge with its own text label, for both a presentation and a satellite event", () => {
+    // §10.1 type-coding: colour is never the sole distinguishing means, so
+    // the text label (not just a colour swatch) must be genuinely present —
+    // asserted here against the real fixture's actual kind, whichever of
+    // oral/spotlight/poster PRESENTATION happens to be, not a guessed value.
+    const KIND_TEXT: Record<string, string> = { oral: 'Oral', spotlight: 'Spotlight', poster: 'Poster' };
+    renderRow(bookmarkedItem());
+    expect(screen.getByText(KIND_TEXT[PRESENTATION.kind])).toBeInTheDocument();
+
+    const satelliteEvent = program.satellite[0];
+    const { unmount } = renderRow({
+      key: satelliteEvent.id,
+      source: 'bookmark',
+      sourceLabel: '',
+      satellite: satelliteEvent,
+      start: satelliteEvent.start,
+      end: satelliteEvent.end,
+      conflicts: [],
+    });
+    const TYPE_TEXT: Record<string, string> = { workshop: 'Workshop', challenge: 'Challenge', tutorial: 'Tutorial' };
+    expect(screen.getByText(TYPE_TEXT[satelliteEvent.type])).toBeInTheDocument();
+    unmount();
+  });
 });
 
 // --- Schedule page ----------------------------------------------------------
