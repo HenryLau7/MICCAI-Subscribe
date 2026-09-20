@@ -247,3 +247,100 @@ describe('ImportPage', () => {
     expect(screen.getByText(/imported/i)).toBeInTheDocument();
   });
 });
+
+/**
+ * The Web Share path exists for iOS, where a downloaded .ics lands in Files
+ * and reaching Calendar takes several more taps. `navigator.share` with a
+ * file hands the share sheet a real calendar file instead. It is strictly
+ * additive: where the API is absent (every desktop browser today), the page
+ * must look exactly as it did before.
+ */
+function stubWebShare(): { share: ReturnType<typeof vi.fn>; restore: () => void } {
+  const share = vi.fn().mockResolvedValue(undefined);
+  const canShare = vi.fn().mockReturnValue(true);
+  Object.defineProperty(navigator, 'share', { value: share, configurable: true, writable: true });
+  Object.defineProperty(navigator, 'canShare', { value: canShare, configurable: true, writable: true });
+  return {
+    share,
+    restore: () => {
+      Reflect.deleteProperty(navigator, 'share');
+      Reflect.deleteProperty(navigator, 'canShare');
+    },
+  };
+}
+
+describe('CalendarPage Web Share ("Add to Calendar")', () => {
+  let web: ReturnType<typeof stubWebShare> | undefined;
+
+  beforeEach(() => {
+    localStorage.clear();
+    mockedLoadProgram.mockResolvedValue(program);
+  });
+
+  afterEach(() => {
+    web?.restore();
+    web = undefined;
+    vi.restoreAllMocks();
+  });
+
+  it('renders no share control at all when the browser cannot share files', async () => {
+    await renderCalendar({ ...defaultState(), bookmarks: ['M-PM-001'] });
+    expect(screen.queryByRole('button', { name: /add to calendar/i })).not.toBeInTheDocument();
+  });
+
+  it('offers Add to Calendar when the browser can share files', async () => {
+    web = stubWebShare();
+    await renderCalendar({ ...defaultState(), bookmarks: ['M-PM-001'] });
+    expect(screen.getByRole('button', { name: /add to calendar/i })).toBeInTheDocument();
+  });
+
+  it('shares a text/calendar file holding the bookmarked session', async () => {
+    web = stubWebShare();
+    await renderCalendar({ ...defaultState(), bookmarks: ['M-PM-001'] });
+
+    fireEvent.click(screen.getByRole('button', { name: /add to calendar/i }));
+    await vi.waitFor(() => expect(web!.share).toHaveBeenCalled());
+
+    const [payload] = web!.share.mock.calls[0] as [{ files: File[] }];
+    expect(payload.files).toHaveLength(1);
+    const file = payload.files[0];
+    expect(file.name).toMatch(/\.ics$/);
+    expect(file.type).toBe('text/calendar');
+    const text = unfold(await file.text());
+    expect(text).toContain('BEGIN:VCALENDAR');
+    expect(text).toContain('DTSTART;TZID=Europe/Paris:20260928T160000');
+  });
+
+  it('stays silent when the user dismisses the share sheet, and never falls back to a download', async () => {
+    web = stubWebShare();
+    const abort = Object.assign(new Error('cancelled'), { name: 'AbortError' });
+    web.share.mockRejectedValue(abort);
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    await renderCalendar({ ...defaultState(), bookmarks: ['M-PM-001'] });
+    fireEvent.click(screen.getByRole('button', { name: /add to calendar/i }));
+    await vi.waitFor(() => expect(web!.share).toHaveBeenCalled());
+
+    expect(clickSpy).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('falls back to a download when the share sheet fails for any reason other than the user dismissing it', async () => {
+    web = stubWebShare();
+    web.share.mockRejectedValue(Object.assign(new Error('nope'), { name: 'NotAllowedError' }));
+    const { captured } = mockObjectUrl();
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    await renderCalendar({ ...defaultState(), bookmarks: ['M-PM-001'] });
+    fireEvent.click(screen.getByRole('button', { name: /add to calendar/i }));
+    await vi.waitFor(() => expect(clickSpy).toHaveBeenCalled());
+
+    expect(unfold(await captured()!.text())).toContain('BEGIN:VCALENDAR');
+  });
+
+  it('disables Add to Calendar when there is nothing to export', async () => {
+    web = stubWebShare();
+    await renderCalendar(defaultState());
+    expect(screen.getByRole('button', { name: /add to calendar/i })).toBeDisabled();
+  });
+});

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { buildCalendar, type IcsEvent } from '../calendar/ics';
+import { buildCalendar, PROD_ID, type IcsEvent } from '../calendar/ics';
+import { downloadBlob } from '../calendar/download';
 
 interface DownloadIcsButtonProps {
   events: IcsEvent[];
@@ -12,14 +13,8 @@ interface DownloadIcsButtonProps {
 }
 
 function download(events: IcsEvent[], filename: string, calendarName: string): void {
-  const ics = buildCalendar(events, { prodId: '-//MICCAI Subscribe//EN', name: calendarName });
-  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  const ics = buildCalendar(events, { prodId: PROD_ID, name: calendarName });
+  downloadBlob(new Blob([ics], { type: 'text/calendar;charset=utf-8' }), filename);
 }
 
 /**

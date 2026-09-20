@@ -11,6 +11,9 @@ export interface IcsEvent {
 
 export interface CalendarOptions { prodId: string; name: string }
 
+/** RFC 5545 §3.7.3. Shared by every export path so they identify one producer. */
+export const PROD_ID = '-//MICCAI Subscribe//EN';
+
 /**
  * RFC 5545 §3.3.11. Backslash must be escaped first, or a later-escaped
  * character's own backslash would get doubled again.

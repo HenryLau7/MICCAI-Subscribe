@@ -6,18 +6,14 @@ import { buildSchedule } from '../store/schedule';
 import { scheduleToEvents } from '../calendar/build';
 import { encodeTransfer } from '../store/transfer';
 import { DownloadIcsButton } from '../ui/DownloadIcsButton';
+import { ShareIcsButton } from '../ui/ShareIcsButton';
+import { downloadBlob } from '../calendar/download';
 
 const REMINDER_OPTIONS = [0, 5, 15, 30, 60];
 const reminderLabel = (m: number): string => (m === 0 ? 'No reminder' : `${m} min before`);
 
 function downloadJson(state: unknown, filename: string): void {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }), filename);
 }
 
 function sectionHeading(id: string, text: string) {
@@ -86,11 +82,18 @@ export function CalendarPage() {
           One file with every session on your schedule. Import it into Apple Calendar, Google Calendar, Outlook, or
           any app that reads .ics files.
         </p>
-        <DownloadIcsButton
-          events={events}
-          filename="miccai-2026-my-schedule.ics"
-          calendarName="My MICCAI 2026 Schedule"
-        />
+        <div className="flex flex-wrap gap-2">
+          <DownloadIcsButton
+            events={events}
+            filename="miccai-2026-my-schedule.ics"
+            calendarName="My MICCAI 2026 Schedule"
+          />
+          <ShareIcsButton
+            events={events}
+            filename="miccai-2026-my-schedule.ics"
+            calendarName="My MICCAI 2026 Schedule"
+          />
+        </div>
         {events.length === 0 && (
           <p className="text-xs text-[var(--fg-muted)]">
             <Link to="/search" className="text-[var(--accent)] underline underline-offset-2">

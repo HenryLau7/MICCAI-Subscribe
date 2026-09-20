@@ -26,10 +26,10 @@ Ships to Cloudflare Pages. **Nothing has been deployed** — that is the user's 
 
 | | |
 |---|---|
-| Tests | **193/193**, 19 files, green under Europe/Paris, Asia/Shanghai, America/Los_Angeles, Pacific/Kiritimati |
+| Tests | **225/225**, 22 files, green under Europe/Paris, Asia/Shanghai, America/Los_Angeles, Pacific/Kiritimati |
 | Typecheck | `npx tsc -b` clean — **covers `src/` and `test/`** |
 | Lint | `npm run lint` (oxlint) clean |
-| Bundle | **102.90 KB gzip** (98.34 JS + 4.56 CSS) against a 150 KB budget |
+| Bundle | **104.69 KB gzip** (99.93 JS + 4.76 CSS) against a 150 KB budget |
 | Service worker | ~6.1 KB gzip, separate |
 | Offline gate | `node web/scripts/verify-offline.mjs` → **11/11** |
 | Data | 1165 papers · 1318 presentations · 23 sessions · 111 satellite events |

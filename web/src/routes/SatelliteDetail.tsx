@@ -3,6 +3,7 @@ import { useProgram } from '../ui/ProgramContext';
 import { EmptyState } from '../ui/EmptyState';
 import { BookmarkButton } from '../ui/BookmarkButton';
 import { DownloadIcsButton } from '../ui/DownloadIcsButton';
+import { ShareIcsButton } from '../ui/ShareIcsButton';
 import { TypeBadge } from '../ui/TypeBadge';
 import { googleCalendarUrl } from '../calendar/google';
 import { formatDay, formatTime } from '../store/schedule';
@@ -105,6 +106,11 @@ export function SatelliteDetail() {
             Google Calendar
           </a>
           <DownloadIcsButton
+            events={[icsEvent]}
+            filename={`${event.acronym || event.id}.ics`}
+            calendarName={event.acronym ? `${event.acronym} — ${event.name}` : event.name}
+          />
+          <ShareIcsButton
             events={[icsEvent]}
             filename={`${event.acronym || event.id}.ics`}
             calendarName={event.acronym ? `${event.acronym} — ${event.name}` : event.name}
