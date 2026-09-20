@@ -26,7 +26,12 @@
  *   4. Flips the browser to offline via
  *      `Network.emulateNetworkConditions({ offline: true, ... })` — actual
  *      network-layer offline, the same mechanism DevTools' Network→Offline
- *      checkbox uses, not a UI-only toggle — and asserts:
+ *      checkbox uses, not a UI-only toggle. Before trusting anything else,
+ *      it first asserts the emulation genuinely engaged
+ *      (`navigator.onLine === false`, and a `fetch()` to a URL in neither
+ *      cache bucket actually rejects) — a no-op emulation would otherwise
+ *      let every render check below pass while quietly testing a live
+ *      network. Only then does it assert:
  *        - the home page still renders (non-trivial content, zero console
  *          errors)
  *        - a client-side navigation to My Schedule still renders
@@ -35,7 +40,11 @@
  *        - clicking into a paper detail page from those offline results
  *          still renders
  *   5. Prints a PASS/FAIL line per assertion and exits non-zero if any
- *      assertion failed, so this is CI-usable, not just eyeballed.
+ *      assertion failed, so this is CI-usable, not just eyeballed. Every
+ *      startup failure path throws (rather than `process.exit()`) so the
+ *      `finally` block always runs: `vite preview` and Chrome are always
+ *      killed and the temp profile dir always cleaned up, even when the
+ *      script fails early.
  *
  * Usage:
  *   npm run build
@@ -135,11 +144,13 @@ function makeCdpClient(ws) {
 async function main() {
   const distPath = join(webRoot, 'dist');
   if (!existsSync(distPath)) {
-    console.error(
+    // Nothing spawned yet at this point, so process.exit() would be safe
+    // here specifically — but throw for uniformity with the checks below,
+    // so this can't silently become unsafe if code is ever reordered.
+    throw new Error(
       `${distPath} does not exist. Run \`npm run build\` first — this script verifies a ` +
         `real production build, it does not build one for you.`,
     );
-    process.exit(1);
   }
 
   // --- start `vite preview` ---
@@ -159,17 +170,20 @@ async function main() {
   try {
     const previewUp = await waitForHttp(previewUrl, 15000);
     if (!previewUp) {
-      console.error(`vite preview never became reachable at ${previewUrl}.\n${previewLog}`);
-      process.exit(1);
+      // throw, not process.exit(): this is inside the try whose `finally`
+      // kills `preview`/`chrome` and removes the temp profile dir.
+      // process.exit() does not unwind to `finally` — on this and the two
+      // checks below, that used to leak `vite preview` (started with
+      // --strictPort) and left the next run dead on EADDRINUSE.
+      throw new Error(`vite preview never became reachable at ${previewUrl}.\n${previewLog}`);
     }
 
     // --- start headless Chrome ---
     if (!existsSync(CHROME_PATH)) {
-      console.error(
+      throw new Error(
         `Chrome binary not found at ${CHROME_PATH}. Set CHROME_PATH to a valid ` +
           `Chrome/Chromium executable (see the header comment in this script).`,
       );
-      process.exit(1);
     }
     chrome = spawn(
       CHROME_PATH,
@@ -188,8 +202,7 @@ async function main() {
 
     const cdpUp = await waitForHttp(`${cdpBase}/json/version`, 15000);
     if (!cdpUp) {
-      console.error(`Headless Chrome never exposed the CDP endpoint at ${cdpBase}.`);
-      process.exit(1);
+      throw new Error(`Headless Chrome never exposed the CDP endpoint at ${cdpBase}.`);
     }
 
     const version = await (await fetch(`${cdpBase}/json/version`)).json();
@@ -240,6 +253,28 @@ async function main() {
       return false;
     }
 
+    // Like waitForCondition, but for when the thing worth keeping is the
+    // VALUE, not just a boolean — and where re-evaluating a cheap boolean
+    // check and then making a SEPARATE follow-up call to read the real
+    // value was empirically unreliable (a boolean "caches are populated"
+    // poll returning true, immediately followed by a distinct
+    // Runtime.evaluate call to read the same Cache Storage state, was
+    // observed reading back empty on a freshly-created browser profile —
+    // two different CDP round trips a few hundred ms apart, disagreeing
+    // about the same in-page state). Re-evaluating and re-checking the
+    // SAME expression each iteration removes that cross-call race: the
+    // value returned is exactly the value that was just validated.
+    async function waitForValue(expr, predicate, timeoutMs = 15000, intervalMs = 200) {
+      const start = Date.now();
+      let last;
+      while (Date.now() - start < timeoutMs) {
+        last = await evaluate(expr, true).catch(() => undefined);
+        if (last !== undefined && predicate(last)) return last;
+        await sleep(intervalMs);
+      }
+      return last;
+    }
+
     // --- 1. Load ONLINE, wait for SW activation ---
     await page.send('Page.navigate', { url: previewUrl });
     // On a completely fresh browser profile (no prior visit to this origin),
@@ -251,35 +286,15 @@ async function main() {
       30000,
     );
     record('service worker reaches "activated" after first online load', swActivated);
-    // Cache Storage writes made during the install event (Workbox's own
-    // precache, and load.ts's own program-data fetch/cache.put shortly
-    // after) were observed lagging a couple of seconds behind
-    // `active.state === 'activated'` becoming visible to a separate
-    // Runtime.evaluate call on a completely fresh profile in this
-    // environment — give it real headroom before trusting a read.
-    await sleep(3000);
 
     // --- 2. Inspect Cache Storage split (live, in-browser half of Ruling B) ---
     // Both buckets are populated inside the SW's install-event waitUntil()
     // (Workbox precache) and inside load.ts's async loadProgram() call
     // (miccai-program-v1), which can each still be finishing their
-    // caches.put() a beat after `active.state === 'activated'` — poll
-    // instead of reading once, to avoid a race against either.
-    const cachesPopulated = await waitForCondition(
-      `(async () => {
-        const names = await caches.keys();
-        if (!names.some(n => n.startsWith('workbox-precache'))) return false;
-        const programCache = await caches.open('miccai-program-v1');
-        const programKeys = await programCache.keys();
-        return programKeys.length > 0;
-      })()`,
-      15000,
-    );
-    if (!cachesPopulated) {
-      console.warn('Cache Storage did not finish populating within 15s — reading it anyway.');
-    }
-    const cacheState = await evaluate(
-      `(async () => {
+    // caches.put() a beat after `active.state === 'activated'` — poll the
+    // actual state itself (see waitForValue above) instead of a boolean
+    // proxy for it, to avoid a race against either.
+    const cacheStateExpr = `(async () => {
         const names = await caches.keys();
         const out = {};
         for (const n of names) {
@@ -288,8 +303,13 @@ async function main() {
           out[n] = keys.map(k => new URL(k.url).pathname);
         }
         return out;
-      })()`,
-      true,
+      })()`;
+    const cacheState = await waitForValue(
+      cacheStateExpr,
+      (state) =>
+        Object.keys(state).some((n) => n.startsWith('workbox-precache')) &&
+        (state['miccai-program-v1'] || []).length > 0,
+      15000,
     );
     const programBucket = cacheState['miccai-program-v1'] || [];
     const precacheBucketName = Object.keys(cacheState).find((n) => n.startsWith('workbox-precache'));
@@ -318,46 +338,88 @@ async function main() {
       uploadThroughput: 0,
     });
 
+    // Prove the emulation actually engaged BEFORE trusting any "renders
+    // while offline" assertion below. If Network.emulateNetworkConditions
+    // silently no-ops (different Chrome build, a changed flag, a
+    // session/target mismatch), every subsequent render check would still
+    // pass while quietly testing a live network — a false PASS that is
+    // worse than no gate at all. Two independent, cheap checks, both hard
+    // failures:
+    const navigatorOffline = await evaluate('navigator.onLine === false').catch(() => false);
+    record('navigator.onLine reports offline after emulation is enabled', navigatorOffline);
+
+    const uncachedFetchRejects = await evaluate(
+      `(async () => {
+        // A path guaranteed to be in neither Cache Storage bucket (not a
+        // precached shell file, not /data/program.min.json) and not
+        // matched by the SW's navigation-fallback route (that only
+        // intercepts requests with mode "navigate"; a plain fetch() does
+        // not use that mode) — so this must go straight to the network.
+        // If the network is genuinely down, the fetch REJECTS; if the
+        // emulation didn't engage, it resolves.
+        try {
+          await fetch('/__verify-offline-probe-' + Date.now() + '-' + Math.random());
+          return false;
+        } catch {
+          return true;
+        }
+      })()`,
+      true,
+    ).catch(() => false);
+    record(
+      'a fetch() to an uncached URL genuinely fails offline (proves the emulation is not a no-op)',
+      uncachedFetchRejects,
+    );
+
     await page.send('Page.navigate', { url: previewUrl });
-    await sleep(1500);
+    const homeReady = await waitForCondition(
+      `document.body.innerText.includes('MICCAI Subscribe')`,
+      10000,
+    );
     const homeText = await evaluate('document.body.innerText').catch(() => '');
     record(
       'home page renders while offline (reload)',
-      homeText.length > 100 && /MICCAI/.test(homeText),
+      homeReady && homeText.length > 100,
       `${homeText.length} chars`,
     );
 
     const scheduleNav = await evaluate(
       `(() => { const link = [...document.querySelectorAll('a')].find(a => /schedule/i.test(a.getAttribute('href')||'')); if (link) { link.click(); return true; } return false; })()`,
     ).catch(() => false);
-    await sleep(800);
+    const scheduleReady =
+      scheduleNav && (await waitForCondition(`document.body.innerText.includes('My schedule')`, 10000));
     const scheduleText = await evaluate('document.body.innerText').catch(() => '');
     record(
       'My Schedule renders while offline (client-side navigation)',
-      scheduleNav && /schedule/i.test(scheduleText),
+      scheduleNav && scheduleReady,
       `${scheduleText.length} chars`,
     );
 
     await page.send('Page.navigate', { url: `${previewUrl}search?q=segmentation` });
-    await sleep(1500);
+    const searchReady = await waitForCondition(
+      `document.querySelectorAll('a[href^="/paper/"]').length > 0`,
+      10000,
+    );
     const searchText = await evaluate('document.body.innerText').catch(() => '');
     const searchResultCount = await evaluate(
       `document.querySelectorAll('a[href^="/paper/"]').length`,
     ).catch(() => 0);
     record(
       'hard offline navigation to /search?q=segmentation returns results',
-      searchResultCount > 0,
+      searchReady && searchResultCount > 0,
       `${searchResultCount} paper links, ${searchText.length} chars`,
     );
 
     const detailNav = await evaluate(
       `(() => { const link = document.querySelector('a[href^="/paper/"]'); if (link) { link.click(); return link.getAttribute('href'); } return null; })()`,
     ).catch(() => null);
-    await sleep(800);
+    const detailReady =
+      !!detailNav &&
+      (await waitForCondition(`location.pathname.startsWith('/paper/')`, 10000));
     const detailText = await evaluate('document.body.innerText').catch(() => '');
     record(
       'paper detail page renders while offline',
-      !!detailNav && detailText.length > 50,
+      !!detailNav && detailReady && detailText.length > 50,
       `${detailNav} — ${detailText.length} chars`,
     );
 
