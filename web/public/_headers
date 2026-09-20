@@ -1,0 +1,43 @@
+# Cloudflare Pages headers. See docs/RUNBOOK.md for the reasoning.
+#
+# The service worker (Workbox, generated at build time into sw.js/workbox-*.js)
+# owns app-shell freshness via content-hashed precache entries; the CDN's job
+# is to get out of its way, not add a second opinion about what's fresh:
+#   - index.html and the SW's own files must be revalidated on every request,
+#     or a stale edge copy can pin clients to an old app version indefinitely
+#     (a new SW is only discovered by re-fetching sw.js).
+#   - /data/program.min.json is fetched at runtime by src/data/load.ts, which
+#     already does its own cache-then-revalidate with `cache: 'no-cache'`
+#     (forces a real conditional request past the browser's HTTP cache). A
+#     long-lived edge cache in front of that would silently defeat the
+#     revalidation during the daily data refresh.
+#   - Hashed build assets under /assets/* never change contents for a given
+#     filename, so they're safe to cache forever.
+
+/index.html
+  Cache-Control: no-cache
+
+/
+  Cache-Control: no-cache
+
+/sw.js
+  Cache-Control: no-cache
+
+/registerSW.js
+  Cache-Control: no-cache
+
+/workbox-*.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+/data/program.min.json
+  Cache-Control: no-cache
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

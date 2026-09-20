@@ -1,0 +1,117 @@
+name: Daily data refresh
+
+# Re-fetches the official MICCAI 2026 PDFs/listing pages and rebuilds
+# data/processed/program.json. Opens a PR when the program content actually
+# changed. NEVER auto-merges — the official main-program PDF changed its
+# whole layout mid-flight once already (2026-09-08 -> 2026-09-10), silently
+# dropping a column; a human must read the diff before it ships. See
+# docs/RUNBOOK.md for what to do when this workflow fails or opens a PR.
+
+on:
+  schedule:
+    # 05:00 UTC daily. That's 07:00 CEST during the conference (late Sep,
+    # still European Summer Time -> UTC+2) and 06:00 CET after DST ends in
+    # late October, if this is ever left running past the conference.
+    - cron: '0 5 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install importer dependencies
+        run: pip install -r requirements.txt
+
+      - name: Snapshot current program.json (for a meaningful diff below)
+        run: |
+          if [ -f data/processed/program.json ]; then
+            cp data/processed/program.json /tmp/program.before.json
+          fi
+
+      - name: Fetch official sources
+        run: python3 scripts/fetch.py
+
+      # No `continue-on-error` and no `|| true` on this step, deliberately:
+      # scripts/validate.py's gate exits non-zero on malformed input (counts
+      # out of range, missing rooms, dates outside the conference window,
+      # etc.), and build.py writes NO artefacts when that happens. Letting
+      # this step fail normally fails the whole job (red X, a GitHub
+      # notification, no silent partial state) instead of quietly falling
+      # through to "no changes, nothing to do" below.
+      - name: Build + validate program bundle
+        run: python3 scripts/build.py
+
+      - name: Determine whether the program actually changed
+        id: diff
+        run: |
+          # program.json's meta.generated_at / meta.fetched_at change on
+          # EVERY run by construction (they're wall-clock timestamps), so a
+          # raw `git diff` on this file would be non-empty every single day
+          # regardless of whether the conference program itself changed.
+          # Compare with those two fields stripped instead.
+          if [ -f /tmp/program.before.json ]; then
+            jq 'del(.meta.generated_at, .meta.fetched_at)' /tmp/program.before.json > /tmp/old.json
+          else
+            echo '{}' > /tmp/old.json
+          fi
+          jq 'del(.meta.generated_at, .meta.fetched_at)' data/processed/program.json > /tmp/new.json
+          if diff -q /tmp/old.json /tmp/new.json > /dev/null; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No substantive change to data/processed/program.json."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Program content changed."
+          fi
+
+      - name: Compose PR body
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          {
+            echo "Automated daily refresh from the official MICCAI 2026 sources (\`scripts/fetch.py\` + \`scripts/build.py\`)."
+            echo
+            echo "**Do not auto-merge.** Read the diff before merging — the official PDF changed layout mid-flight once already, and \`validate.py\`'s gate passing only means the shape looked sane, not that the content is right (see the pre-launch checklist in \`docs/RUNBOOK.md\`)."
+            echo
+            echo "\`diff-report.md\` below covers paper adds/removals/retitles and oral/poster session time or room moves only. It does **not** cover satellite-event or author/affiliation changes — for those, review the \`data/processed/program.json\` and \`data/raw/\` diffs in the Files Changed tab."
+            echo
+            echo '---'
+            echo
+            cat data/processed/diff-report.md
+          } > /tmp/pr-body.md
+
+      - name: Open pull request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore(data): daily program refresh'
+          branch: data-refresh/daily
+          delete-branch: true
+          title: 'chore(data): daily program refresh'
+          body-path: /tmp/pr-body.md
+          labels: data-refresh
+          # No auto-merge configuration here, and none should ever be added.
+
+      - name: Upload fetched sources for debugging (only on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-fetch-raw-sources
+          path: data/raw/
+          retention-days: 14
