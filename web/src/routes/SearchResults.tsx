@@ -17,8 +17,13 @@ function isSatelliteResult(r: SearchResult): r is Extract<SearchResult, { kind: 
   return r.kind === 'satellite';
 }
 
+/**
+ * Fetches one more hit than we display, purely so the count can tell "exactly
+ * 50" from "more than 50". Showing "50+" when the true total is 50 is a small
+ * lie, and the same rule applies to counts as to everything else here.
+ */
 function runSearch(index: SearchIndex, query: string): SearchResult[] {
-  return query.trim() ? search(index, query, RESULT_LIMIT) : [];
+  return query.trim() ? search(index, query, RESULT_LIMIT + 1) : [];
 }
 
 export function SearchResults() {
@@ -26,7 +31,9 @@ export function SearchResults() {
   const [params] = useSearchParams();
   const query = params.get('q') ?? '';
 
-  const results = useMemo(() => runSearch(index, query), [index, query]);
+  const found = useMemo(() => runSearch(index, query), [index, query]);
+  const hasMore = found.length > RESULT_LIMIT;
+  const results = hasMore ? found.slice(0, RESULT_LIMIT) : found;
   const papers = results.filter(isPaperResult);
   const satellite = results.filter(isSatelliteResult);
 
@@ -53,7 +60,7 @@ export function SearchResults() {
         <>
           <p role="status" className="text-sm font-medium text-[var(--fg)]">
             {results.length}
-            {results.length === RESULT_LIMIT ? '+' : ''} result{results.length === 1 ? '' : 's'} for &ldquo;
+            {hasMore ? '+' : ''} result{results.length === 1 ? '' : 's'} for &ldquo;
             {query}&rdquo;
           </p>
 

@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { SearchResults } from '../src/routes/SearchResults';
 import { StoreProvider } from '../src/store/StoreProvider';
 import { decodeProgram } from '../src/data/decode';
-import { buildSearchIndex } from '../src/search/engine';
+import { buildSearchIndex, search } from '../src/search/engine';
 import raw from '../public/data/program.min.json';
 
 const program = decodeProgram(raw as never);
@@ -61,5 +61,34 @@ describe('SearchResults', () => {
 
     expect(screen.getByText(/Start typing to search/i)).toBeInTheDocument();
     expect(screen.queryByText(/No results for/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('the "50+" result count does not overclaim', () => {
+  // The page caps display at 50. It used to print "50+" whenever it held 50
+  // rows — including when 50 was the true total — so it claimed hits that did
+  // not exist. It now fetches one extra hit purely to tell the two apart.
+  //
+  // Deliberately no "exactly 50" fixture: no term has exactly 50 hits today,
+  // and pinning one would break on the next daily data refresh. These two
+  // bracket the boundary instead.
+  it('shows the + when there really are more than 50', () => {
+    renderAt('/search?q=segmentation');   // 354 hits
+    expect(screen.getByRole('status')).toHaveTextContent(/^50\+ results for/);
+
+    // The extra hit is fetched to count with, never to display: the 51st
+    // result must not appear on the page.
+    const hits = search(index, 'segmentation', 51);
+    expect(hits).toHaveLength(51);
+    const fiftyFirst = hits[50];
+    const title = fiftyFirst.kind === 'paper' ? fiftyFirst.paper.title : fiftyFirst.event.name;
+    expect(screen.queryByText(title)).toBeNull();
+  });
+
+  it('shows a bare count when the total is under the cap', () => {
+    renderAt('/search?q=federated');      // 13 hits
+    const status = screen.getByRole('status');
+    expect(status).toHaveTextContent(/^13 results for/);
+    expect(status).not.toHaveTextContent('+');
   });
 });

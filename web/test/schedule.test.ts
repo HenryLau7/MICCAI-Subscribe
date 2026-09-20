@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { decodeProgram } from '../src/data/decode';
 import { defaultState } from '../src/store/storage';
-import { buildSchedule, formatDay, formatTime, overlaps } from '../src/store/schedule';
+import { buildSchedule, formatDay, formatTime, overlaps, unresolvedBookmarks } from '../src/store/schedule';
 import type { Program } from '../src/data/types';
 import raw from '../public/data/program.min.json';
 
@@ -105,5 +105,65 @@ describe('buildSchedule', () => {
     const days = buildSchedule(program, { ...defaultState(), bookmarks: [ev.id] });
     expect(days[0].date).toBe('2026-09-27');
     expect(days[0].items[0].satellite?.acronym).toBe(ev.acronym);
+  });
+});
+
+describe('two talks in the same session are not a conflict', () => {
+  // 9 of 18 oral sessions pack 6 orals + 6 spotlights into one 90-minute
+  // window, so bookmarking two talks from one session is the normal case.
+  // One room, one seat, back to back — flagging that red trains users to
+  // ignore the badge, which is exactly what the conflict-tiering ruling
+  // exists to prevent.
+  const twoTalksInOneSession = (): string[] => {
+    const talks = program.presentations.filter((p) => p.sessionId === 'O1A' && p.kind !== 'poster');
+    return [talks[0].id, talks[1].id];
+  };
+
+  it('emits no conflict at all between them', () => {
+    const [a, b] = twoTalksInOneSession();
+    const [day] = buildSchedule(program, { ...defaultState(), bookmarks: [a, b] });
+    // Structural: both must actually resolve, so an empty list from a dropped
+    // lookup cannot pass this.
+    expect(day.items).toHaveLength(2);
+    expect(day.items[0].conflicts).toEqual([]);
+    expect(day.items[1].conflicts).toEqual([]);
+  });
+
+  it('holds for an oral and a spotlight in the same session', () => {
+    const oral = program.presentations.find((p) => p.sessionId === 'O1A' && p.kind === 'oral')!;
+    const spot = program.presentations.find((p) => p.sessionId === 'O1A' && p.kind === 'spotlight')!;
+    const [day] = buildSchedule(program, { ...defaultState(), bookmarks: [oral.id, spot.id] });
+    expect(day.items).toHaveLength(2);
+    expect(day.items.flatMap((i) => i.conflicts)).toEqual([]);
+  });
+
+  it('still flags a talk in a DIFFERENT overlapping session as hard', () => {
+    // Guard against "fixing" the above by suppressing conflicts wholesale.
+    const [a] = twoTalksInOneSession();
+    const other = program.presentations.find((p) => p.sessionId === 'O1B' && p.kind !== 'poster')!;
+    const [day] = buildSchedule(program, { ...defaultState(), bookmarks: [a, other.id] });
+    expect(day.items[0].conflicts.some((c) => c.level === 'hard')).toBe(true);
+  });
+});
+
+describe('unresolvedBookmarks', () => {
+  // The program is TENTATIVE and refreshed daily during the conference. A
+  // bookmark whose presentation disappears is currently dropped in silence:
+  // it vanishes from /schedule, the day counts and the .ics with no trace.
+  it('is empty when every bookmark resolves', () => {
+    const state = { ...defaultState(), bookmarks: ['M-PM-001', program.satellite[0].id] };
+    expect(unresolvedBookmarks(program, state)).toEqual([]);
+  });
+
+  it('reports a bookmark whose presentation no longer exists', () => {
+    const state = { ...defaultState(), bookmarks: ['M-PM-001', 'M-PM-001:oral', 'sat:gone'] };
+    // M-PM-001 has no oral slot, so ':oral' is exactly the dangling-id shape a
+    // refresh produces when a talk is withdrawn.
+    expect(unresolvedBookmarks(program, state)).toEqual(['M-PM-001:oral', 'sat:gone']);
+  });
+
+  it('ignores follows — only explicit bookmarks can be lost', () => {
+    const state = { ...defaultState(), followedAuthors: ['nobody-at-all'] };
+    expect(unresolvedBookmarks(program, state)).toEqual([]);
   });
 });

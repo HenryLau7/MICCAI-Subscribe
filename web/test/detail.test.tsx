@@ -336,18 +336,21 @@ describe('SessionDetail', () => {
     const inSession = program.presentations.filter((pr) => pr.sessionId === SESSION_WITH_ORDER);
     expect(inSession.length).toBeGreaterThan(1); // sanity: fixture really has several talks
 
-    // O1A interleaves an oral track and a spotlight track, each numbered 1..6 on its own —
-    // so in the RAW (unsorted) presentation array, M-PM-042 (oral, orderInSession 6) sits
-    // right before T-PM-017 (spotlight, orderInSession 1 in O1A; T-PM-017 also has an unrelated
-    // poster presentation elsewhere, orderInSession 0). Only a correct sort-by-orderInSession
-    // puts T-PM-017 ahead of M-PM-042; picking two same-track entries wouldn't catch a dropped
-    // sort, since same-track entries already happen to be pre-sorted in the source data.
-    const earlyOrderPaper = program.byPaperId.get('T-PM-017')!;
-    const lateOrderPaper = program.byPaperId.get('M-PM-042')!;
+    // O1A runs two independently-numbered tracks: 6 orals (1..6) and 6 spotlights
+    // (1..6). The PDF lists every oral first, then every spotlight — so
+    // orderInSession ALONE is not a valid sort key: it interleaves the tracks into
+    // an order the source never uses, and renders "#1" twice on one page. The
+    // contract is kind-then-number. T-PM-017 is spotlight 1 (it also has an
+    // unrelated poster presentation elsewhere, orderInSession 0); M-PM-042 is
+    // oral 6, and must come BEFORE it.
+    const earlyOrderPaper = program.byPaperId.get('M-PM-042')!;
+    const lateOrderPaper = program.byPaperId.get('T-PM-017')!;
     const earlyPr = inSession.find((pr) => pr.paperId === earlyOrderPaper.id)!;
     const latePr = inSession.find((pr) => pr.paperId === lateOrderPaper.id)!;
-    expect(earlyPr.orderInSession).toBe(1);
-    expect(latePr.orderInSession).toBe(6);
+    expect(earlyPr.kind).toBe('oral');
+    expect(earlyPr.orderInSession).toBe(6);
+    expect(latePr.kind).toBe('spotlight');
+    expect(latePr.orderInSession).toBe(1);
 
     renderAt(`/session/${SESSION_WITH_ORDER}`, '/session/:id', <SessionDetail />);
 
@@ -365,7 +368,24 @@ describe('SessionDetail', () => {
     // O1A genuinely interleaves an oral track and a spotlight track, so this
     // is a real fixture proving the two kinds render distinct labels within
     // the very same session, not merely that some label exists somewhere.
-    expect(within(rows[earlyIdx]).getByText('Spotlight')).toBeInTheDocument();
-    expect(within(rows[lateIdx]).getByText('Oral')).toBeInTheDocument();
+    expect(within(rows[earlyIdx]).getByText('Oral')).toBeInTheDocument();
+    expect(within(rows[lateIdx]).getByText('Spotlight')).toBeInTheDocument();
+
+    // The whole rendered order, derived independently of the implementation's
+    // comparator: every oral ascending, then every spotlight ascending. A
+    // regression to sort-by-number-alone puts spotlight 1 at index 1 and fails.
+    const expectedOrder = [
+      ...inSession.filter((pr) => pr.kind === 'oral'),
+      ...inSession.filter((pr) => pr.kind === 'spotlight'),
+    ]
+      .sort((a, b) => (a.kind === b.kind ? a.orderInSession - b.orderInSession : 0))
+      .map((pr) => program.byPaperId.get(pr.paperId)!.title);
+    const renderedOrder = rows.map(
+      (row) => expectedOrder.find((t) => within(row).queryByText(t)) ?? '?',
+    );
+    expect(renderedOrder).toEqual(expectedOrder);
+
+    // And no "#N" label survives anywhere: a bare number is the ambiguous form.
+    expect(within(list).queryByText(/#\d+ in session/)).toBeNull();
   });
 });

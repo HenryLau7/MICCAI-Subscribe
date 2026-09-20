@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { StoreProvider } from './store/StoreProvider';
 import { ProgramProvider } from './ui/ProgramContext';
 import { BottomNav } from './ui/BottomNav';
@@ -16,12 +16,26 @@ import { SatelliteDetail } from './routes/SatelliteDetail';
 import { CalendarPage } from './routes/CalendarPage';
 import { ImportPage } from './routes/ImportPage';
 
-/** Placeholder for routes another task will build out; keeps bottom-nav links from going blank. */
-function ComingSoon({ label }: { label: string }) {
+/**
+ * Every unknown path lands here, because _redirects rewrites /* to index.html
+ * so the SPA can route. That means typos, stale links and misread QR codes all
+ * arrive at this screen — it must say the page doesn't exist, never that the
+ * app is unfinished.
+ */
+function NotFound() {
   return (
     <div className="mx-auto max-w-xl px-4 py-16 text-center">
-      <h1 className="text-lg font-semibold text-[var(--fg)]">{label}</h1>
-      <p className="mt-2 text-sm text-[var(--fg-muted)]">This section isn&rsquo;t built yet — check back soon.</p>
+      <h1 className="text-lg font-semibold text-[var(--fg)]">Page not found</h1>
+      <p className="mt-2 text-sm text-[var(--fg-muted)]">
+        That link doesn&rsquo;t match anything in the program. It may be mistyped, or point to an entry
+        that has since changed.
+      </p>
+      <Link
+        to="/"
+        className="mt-4 inline-flex min-h-11 items-center text-sm text-[var(--accent)] underline underline-offset-2"
+      >
+        Go to search
+      </Link>
     </div>
   );
 }
@@ -43,7 +57,7 @@ function AppShell() {
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/import" element={<ImportPage />} />
           <Route path="/about" element={<About />} />
-          <Route path="*" element={<ComingSoon label="Not found" />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
       </main>

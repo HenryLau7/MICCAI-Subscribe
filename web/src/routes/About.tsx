@@ -32,7 +32,7 @@ export function About() {
         <p className="text-sm text-[var(--fg-muted)]">
           Program data is parsed from the official MICCAI 2026 schedule PDFs, revision{' '}
           <strong className="font-semibold text-[var(--fg)]">{program.meta.sourceRevision}</strong>, fetched{' '}
-          <strong className="font-semibold text-[var(--fg)]">{program.meta.fetchedAt}</strong>.
+          <strong className="font-semibold text-[var(--fg)]">{program.meta.fetchedAt.slice(0, 10)}</strong>.
         </p>
         <p className="text-sm text-[var(--fg-muted)]">
           The official schedule is marked{' '}
@@ -68,10 +68,12 @@ export function About() {
           Privacy
         </h2>
         <p className="text-sm text-[var(--fg-muted)]">
-          This site does not collect your name, email, institution, or location. Bookmarks, followed authors,
-          and preferences live only in this browser&rsquo;s local storage — nothing is sent to a server just by
-          using the app. The only time anything leaves your device is if you choose to generate a calendar
-          subscription link, and that link contains only entry IDs, never personal information.
+          This site does not collect your name, email, institution, or location. There is no backend and no
+          account: bookmarks, followed authors, and preferences live only in this browser&rsquo;s local
+          storage, and nothing is ever sent to a server. Moving your schedule to another device is the one
+          time your data leaves this browser, and it still doesn&rsquo;t reach a server — the transfer link
+          carries your saved IDs in the part of the URL after the <code>#</code>, which browsers never
+          transmit. Downloading a <code>.ics</code> or a backup file writes it straight to your device.
         </p>
       </section>
 

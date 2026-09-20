@@ -39,6 +39,28 @@ def validate(bundle: dict, unparsed: list, unmatched_sat: list) -> tuple[list, l
             check(bool(s["room"]), f"oral session {s['id']} missing room")
             check(bool(s["chairs"]), f"oral session {s['id']} missing chairs")
 
+    # Derived presentation ids must be unique. presentationId() maps BOTH oral
+    # and spotlight to f"{paper}:oral", so a paper carrying one of each would
+    # silently collide: byPresentationId keeps only the last, while the paper's
+    # presentationIds lists the id twice and the detail page renders two
+    # identical rows with two bookmark buttons for one slot. No paper does this
+    # today (99 oral+poster, 54 spotlight+poster, 0 oral+spotlight) — this gate
+    # makes a future refresh that introduces one fail the build instead.
+    pres_ids = [p["id"] for p in pres]
+    dupe_pres = sorted({i for i in pres_ids if pres_ids.count(i) > 1})
+    check(not dupe_pres,
+          f"{len(dupe_pres)} duplicate derived presentation id(s) — a paper with both an "
+          f"oral and a spotlight collides on ':oral': {dupe_pres[:10]}")
+
+    # Every timestamp must carry the Paris offset. The frontend reads local time
+    # by slicing the string (schedule.ts formatTime), so a switch to 'Z' would
+    # shift every displayed time by two hours with nothing failing.
+    bad_tz = [f"{s['id']}.{f}" for s in sessions + sat for f in ("start", "end")
+              if (s.get(f) or "") and not str(s[f]).endswith("+02:00")]
+    check(not bad_tz,
+          f"{len(bad_tz)} timestamp(s) not in +02:00 Europe/Paris offset form "
+          f"(the UI slices the string, so this shifts every shown time): {bad_tz[:10]}")
+
     boards = [p["id"] for p in papers]
     check(all(BOARD_RE.match(b) for b in boards), "malformed board number present")
     check(len(set(boards)) == len(boards), "duplicate board numbers")

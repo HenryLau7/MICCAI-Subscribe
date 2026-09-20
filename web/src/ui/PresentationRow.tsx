@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Presentation, Program } from '../data/types';
-import { formatDay, formatTime } from '../store/schedule';
+import { formatDay, formatTime, slotLabel } from '../store/schedule';
 import { BookmarkButton } from './BookmarkButton';
 import { TypeBadge } from './TypeBadge';
 
@@ -61,7 +61,7 @@ export function PresentationRow({ program, presentation, showPaper }: Presentati
           </p>
         )}
         <p className="text-xs text-[var(--fg-muted)]">
-          {presentation.orderInSession > 0 ? `#${presentation.orderInSession} in session · ` : ''}
+          {slotLabel(presentation) ? `${slotLabel(presentation)} · ` : ''}
           {formatDay(session.start)} · {formatTime(session.start)}–{formatTime(session.end)}
           {isPoster
             ? ' · hall not published — find the board number'

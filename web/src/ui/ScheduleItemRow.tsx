@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { ScheduleItem } from '../store/schedule';
-import { formatTime } from '../store/schedule';
+import { formatTime, slotLabel } from '../store/schedule';
 import { useStore } from '../store/StoreProvider';
 import { BookmarkButton } from './BookmarkButton';
 import { ConflictBadge } from './ConflictBadge';
@@ -68,7 +68,7 @@ export function ScheduleItemRow({ item }: { item: ScheduleItem }) {
         >
           {session.name}
         </Link>
-        {presentation.orderInSession > 0 ? ` · #${presentation.orderInSession} in session` : ''}
+        {slotLabel(presentation) ? ` · ${slotLabel(presentation)}` : ''}
       </span>
     );
     locationText = isPoster

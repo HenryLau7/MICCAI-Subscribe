@@ -26,6 +26,9 @@ const strings = (v: unknown): string[] =>
  * "invalid" means for its own flow (loadState falls back to defaults;
  * decodeTransfer surfaces the rejection to the UI).
  */
+const isReminder = (n: unknown): n is number =>
+  typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 1440;
+
 export function sanitize(parsed: unknown): StoredState | null {
   if (typeof parsed !== 'object' || parsed === null) return null;
 
@@ -40,7 +43,10 @@ export function sanitize(parsed: unknown): StoredState | null {
     followedAffiliations: strings(o.followedAffiliations),
     excluded: strings(o.excluded),
     prefs: {
-      reminderMinutes: typeof prefs.reminderMinutes === 'number' ? prefs.reminderMinutes : 15,
+      // RFC 5545 durations are whole units: a value like 15.5 reaches the
+      // export as TRIGGER:-PT15.5M, which a calendar client may reject —
+      // taking the entire .ics with it. Clamp at the boundary, not at output.
+      reminderMinutes: isReminder(prefs.reminderMinutes) ? prefs.reminderMinutes : 15,
     },
   };
 }

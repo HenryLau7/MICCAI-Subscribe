@@ -13,6 +13,15 @@
       name="description"
       content="Unofficial mobile-first conference planner for MICCAI 2026 (Strasbourg, 27 Sep - 1 Oct)."
     />
+    <!--
+      SPEC 7.1: start the program bundle in parallel with the module graph.
+      Without this the 386 KB fetch cannot begin until the JS has loaded AND
+      executed, which is the bulk of the first-visit LCP on venue Wi-Fi.
+      crossorigin is required for as="fetch" to match load.ts's fetch()
+      (mode cors, credentials same-origin) — without it the preload is a
+      no-cors request, never reused, and the bundle downloads twice.
+    -->
+    <link rel="preload" href="/data/program.min.json" as="fetch" crossorigin="anonymous" />
     <title>MICCAI Subscribe</title>
   </head>
   <body>

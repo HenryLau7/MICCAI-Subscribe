@@ -3,7 +3,7 @@ import { useProgram } from '../ui/ProgramContext';
 import { EmptyState } from '../ui/EmptyState';
 import { PresentationRow } from '../ui/PresentationRow';
 import { TypeBadge } from '../ui/TypeBadge';
-import { formatDay, formatTime } from '../store/schedule';
+import { bySlot, formatDay, formatTime } from '../store/schedule';
 
 export function SessionDetail() {
   const { program } = useProgram();
@@ -29,7 +29,7 @@ export function SessionDetail() {
   const isPoster = session.kind === 'poster';
   const presentations = program.presentations
     .filter((pr) => pr.sessionId === session.id)
-    .sort((a, b) => (a.orderInSession || 0) - (b.orderInSession || 0));
+    .sort(bySlot);
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6 px-4 pb-16 pt-6">

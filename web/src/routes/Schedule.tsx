@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProgram } from '../ui/ProgramContext';
 import { useStore } from '../store/StoreProvider';
-import { buildSchedule, type ScheduleDay } from '../store/schedule';
+import { buildSchedule, unresolvedBookmarks, type ScheduleDay } from '../store/schedule';
 import { EmptyState } from '../ui/EmptyState';
 import { ScheduleItemRow } from '../ui/ScheduleItemRow';
 import { useRovingTabList } from '../ui/useRovingTabList';
@@ -54,6 +54,7 @@ export function Schedule() {
   const { program } = useProgram();
   const { state } = useStore();
   const days = useMemo(() => buildSchedule(program, state), [program, state]);
+  const lost = useMemo(() => unresolvedBookmarks(program, state), [program, state]);
   const [selected, setSelected] = useState(() => defaultSelectedDay(days));
   const { tabProps } = useRovingTabList(CONFERENCE_DAYS, selected, setSelected);
 
@@ -70,6 +71,19 @@ export function Schedule() {
           Add to calendar
         </Link>
       </header>
+
+      {lost.length > 0 && (
+        <p
+          role="status"
+          className="rounded-lg border border-[var(--warning-border)] bg-[var(--warning-bg)] px-3 py-2 text-sm text-[var(--warning)]"
+        >
+          {lost.length === 1
+            ? '1 saved item is no longer in the program'
+            : `${lost.length} saved items are no longer in the program`}{' '}
+          and can&rsquo;t be shown. The official schedule is tentative and changes; these entries were
+          withdrawn or renumbered since you saved them.
+        </p>
+      )}
 
       <div role="tablist" aria-label="Conference day" className="flex gap-2 overflow-x-auto pb-1">
         {CONFERENCE_DAYS.map((date, index) => {
