@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -67,6 +67,27 @@ describe('generated service worker precache manifest (Ruling B regression guard)
   let outDir: string;
 
   beforeAll(() => {
+    // This suite's whole point is to prove program.min.json is ABSENT from
+    // the precache list. That's only meaningful if the file exists on disk
+    // for this `vite build` to have had the chance to pick up — it does not
+    // exist in a clean checkout (public/data/ is git-ignored) and normally
+    // only appears via `npm run sync`, which `npm test`'s `pretest` hook
+    // runs automatically. Invoke this file any other way — `npx vitest run`
+    // directly, a CI step or IDE "run this test" action that skips `pretest`
+    // — and the negative assertions below would pass vacuously: nothing
+    // named "program" would exist anywhere to be excluded. Fail loudly
+    // instead of silently validating nothing.
+    const programDataPath = join(webRoot, 'public/data/program.min.json');
+    if (!existsSync(programDataPath)) {
+      throw new Error(
+        `${programDataPath} is missing, so this test cannot verify Ruling B ` +
+          `(program.min.json must be excluded from the Workbox precache) — ` +
+          `without the file present, the exclusion assertions pass vacuously. ` +
+          `Run \`npm run sync\` first (or run tests via \`npm test\`, whose ` +
+          `pretest hook does this automatically).`,
+      );
+    }
+
     outDir = mkdtempSync(join(tmpdir(), 'miccai-pwa-build-'));
     // Shell out to a real, isolated `vite build` (rather than importing
     // vite's build() into this already-running Vitest/Vite process): a
@@ -94,7 +115,9 @@ describe('generated service worker precache manifest (Ruling B regression guard)
   }, 60000);
 
   afterAll(() => {
-    rmSync(outDir, { recursive: true, force: true });
+    // beforeAll may have thrown before outDir was assigned (missing
+    // program.min.json precondition below) — nothing to clean up then.
+    if (outDir) rmSync(outDir, { recursive: true, force: true });
   });
 
   it('precaches the app shell: HTML, JS, CSS and icons', () => {
