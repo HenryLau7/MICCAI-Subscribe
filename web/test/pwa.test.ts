@@ -61,7 +61,7 @@ describe('PWA manifest (public/manifest.webmanifest)', () => {
   });
 });
 
-describe('generated service worker precache manifest (Ruling B regression guard)', () => {
+describe('generated service worker precache manifest (single-cache-writer guard)', () => {
   let swSrc: string;
   let precacheUrls: string[];
   let outDir: string;
@@ -80,7 +80,8 @@ describe('generated service worker precache manifest (Ruling B regression guard)
     const programDataPath = join(webRoot, 'public/data/program.min.json');
     if (!existsSync(programDataPath)) {
       throw new Error(
-        `${programDataPath} is missing, so this test cannot verify Ruling B ` +
+        `${programDataPath} is missing, so this test cannot verify the `+
+          `single-cache-writer rule ` +
           `(program.min.json must be excluded from the Workbox precache) — ` +
           `without the file present, the exclusion assertions pass vacuously. ` +
           `Run \`npm run sync\` first (or run tests via \`npm test\`, whose ` +
@@ -133,7 +134,7 @@ describe('generated service worker precache manifest (Ruling B regression guard)
     // program.min.json lives at dist/data/program.min.json (copied verbatim
     // by Vite's public-dir copy) but must never appear in Workbox's own
     // precache list: two writers to "miccai-program-v1" is exactly what
-    // Ruling B forbids.
+    // the single-writer rule forbids.
     expect(precacheUrls.some((u) => u.includes('program'))).toBe(false);
     expect(precacheUrls.some((u) => u.endsWith('.json'))).toBe(false);
     expect(precacheUrls.some((u) => u.startsWith('data/'))).toBe(false);

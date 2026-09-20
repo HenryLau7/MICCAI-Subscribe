@@ -77,7 +77,7 @@ export function ImportPage() {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 py-16">
-      <h1 className="text-xl font-semibold text-[var(--fg)]">Import schedule</h1>
+      <h1 className="text-2xl font-semibold leading-tight text-[var(--fg)]">Import schedule</h1>
       <p className="text-sm text-[var(--fg)]">
         This link contains <strong>{count}</strong> item{count === 1 ? '' : 's'}: {summarize(page.incoming)}.
       </p>
@@ -91,13 +91,13 @@ export function ImportPage() {
             replaceState(page.incoming);
             setPage({ status: 'done' });
           }}
-          className="inline-flex min-h-11 items-center rounded-lg border border-[var(--accent)] bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-fg)] hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className="inline-flex min-h-11 items-center rounded-lg border border-[var(--accent)] bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-fg)] hover:opacity-90 focus-ring"
         >
           Replace my schedule
         </button>
         <Link
           to="/"
-          className="inline-flex min-h-11 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className="inline-flex min-h-11 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)] focus-ring"
         >
           Cancel
         </Link>

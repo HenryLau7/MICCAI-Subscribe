@@ -1,14 +1,39 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens.
+ *
+ * Two rules govern this palette:
+ *
+ * 1. Elevation must be visible. The page and a card used to sit 2% apart
+ *    (#fafafa on #ffffff), which meant a card read as a border, not as a
+ *    surface. --bg is deeper now and --bg-subtle gives nested rows a third
+ *    step, so "row inside card" is carried by fill rather than by a second
+ *    border drawn inside the first.
+ * 2. Radius encodes hierarchy, it is not one value sprayed everywhere:
+ *    card 1rem, nested row 0.625rem, chip full. See --radius-* below.
+ */
 :root {
   color-scheme: light dark;
-  --bg: #fafafa;
+  --bg: #f6f6f7;
   --bg-elevated: #ffffff;
+  --bg-subtle: #f1f1f3;
   --fg: #18181b;
   --fg-muted: #52525b;
   --border: #e4e4e7;
+  --border-strong: #d4d4d8;
   --accent: #7c3aed;
   --accent-fg: #ffffff;
+  /* The selected/on tint used by every chip, tab and toggle. A token rather
+     than `bg-[var(--accent)]/10` inline, because the dark scheme needs a
+     different alpha to read at the same weight against a dark surface. */
+  --accent-soft: rgba(124, 58, 237, 0.1);
+  /* One hairline lift, not a generic drop shadow. Dark mode drops it
+     entirely and lets the border carry elevation — a shadow on a near-black
+     surface is invisible work. */
+  --shadow-card: 0 1px 2px rgba(24, 24, 27, 0.06);
+  --radius-card: 1rem;
+  --radius-row: 0.625rem;
   /* Conflict tiers (Schedule page): hard = must-choose-between, soft = partial
      overlap, neither is used for same-poster-session — that tier reads with
      --fg-muted/--border, the same neutral tokens as everything else. */
@@ -18,7 +43,7 @@
   --warning: #92400e;
   --warning-bg: #fffbeb;
   --warning-border: #fde68a;
-  /* Activity-type tiers (§10.1 类型编码): talk = oral/spotlight, poster,
+  /* Activity-type tiers: talk = oral/spotlight, poster,
      satellite = workshop/challenge/tutorial. Three functional groups, not
      six hues — see TypeBadge.tsx for why. */
   --type-talk: #1471b8;
@@ -34,13 +59,17 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0b0b0d;
-    --bg-elevated: #18181b;
+    --bg: #09090b;
+    --bg-elevated: #151518;
+    --bg-subtle: #1c1c20;
     --fg: #f4f4f5;
     --fg-muted: #a1a1aa;
-    --border: #2c2c31;
+    --border: #27272b;
+    --border-strong: #3f3f46;
     --accent: #a78bfa;
     --accent-fg: #18181b;
+    --accent-soft: rgba(167, 139, 250, 0.14);
+    --shadow-card: none;
     --danger: #fca5a5;
     --danger-bg: #2a1010;
     --danger-border: #5c1f1f;
@@ -65,9 +94,53 @@ body,
   height: 100%;
 }
 
+/*
+ * The app's content is coordinates — board numbers, clock times, counts.
+ * Proportional digits make a column of times ragged and a board number wobble
+ * between rows, so every figure in the UI is tabular by default, and headings
+ * get the tracking a tighter figure width needs.
+ */
 body {
   background: var(--bg);
   color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2 {
+  letter-spacing: -0.014em;
+}
+
+/*
+ * One focus treatment for the whole app, so a keyboard user sees the same
+ * ring on a link, a chip and a card. `focus-ring-inset` is for controls that
+ * sit flush against an edge (the fixed bottom bar, a sticky table header),
+ * where an outward ring would be clipped.
+ */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@utility focus-ring-inset {
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+}
+
+/*
+ * The app's only keyframe animation: a bookmark star reporting that it just
+ * filled. See BookmarkButton.tsx for why it is gated on the user's action
+ * rather than on the bookmarked state.
+ */
+@keyframes bookmark-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.32); }
+  100% { transform: scale(1); }
 }
 
 /* Nothing important behind hover-only affordances, but keep transitions calm. */

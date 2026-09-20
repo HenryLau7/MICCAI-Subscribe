@@ -57,21 +57,26 @@ export function ProgramProvider({ children }: { children: ReactNode }) {
     // A skeleton, not a spinner: the program bundle is the one thing every
     // route needs before it can render anything, so this loading gate has
     // no route to shape itself around yet. It approximates the shape most
-    // routes actually open with (a heading, then a list of cards) — Home,
-    // Schedule and Satellite's list view all do — so there's little layout
-    // shift into the real content once it arrives, which matters more on a
-    // slow venue connection than it would on a fast one.
+    // routes actually open with — a title and a line under it, one full-width
+    // panel (Home's conference status, Schedule's day tabs), a control bar,
+    // then cards — so there's little layout shift into the real content once
+    // it arrives, which matters more on a slow venue connection than it would
+    // on a fast one.
     return (
-      <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-16 pt-6" role="status" aria-live="polite">
+      <div className="mx-auto flex max-w-xl flex-col gap-6 px-4 pb-16 pt-9" role="status" aria-live="polite">
         <span className="sr-only">Loading the MICCAI 2026 program…</span>
-        <div data-testid="program-skeleton" aria-hidden="true" className="flex flex-col gap-4">
-          <div className="h-6 w-40 rounded-md bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
-          <div className="h-11 w-full rounded-lg bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
+        <div data-testid="program-skeleton" aria-hidden="true" className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <div className="h-7 w-52 rounded-md bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
+            <div className="h-4 w-64 max-w-full rounded bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
+          </div>
+          <div className="h-14 w-full rounded-[var(--radius-card)] bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
+          <div className="h-12 w-full rounded-xl bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
           <div className="flex flex-col gap-3">
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="flex flex-col gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4"
+                className="flex flex-col gap-2 rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--bg-elevated)] p-4"
               >
                 <div className="h-4 w-3/4 rounded bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
                 <div className="h-3 w-1/2 rounded bg-[var(--border)] animate-pulse motion-reduce:animate-none" />
@@ -91,7 +96,7 @@ export function ProgramProvider({ children }: { children: ReactNode }) {
         <button
           type="button"
           onClick={retry}
-          className="min-h-11 rounded-xl border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className="min-h-11 rounded-xl border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] focus-ring"
         >
           Retry
         </button>

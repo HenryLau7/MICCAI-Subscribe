@@ -25,11 +25,11 @@ function sectionHeading(id: string, text: string) {
 }
 
 const buttonClass =
-  'inline-flex min-h-11 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--fg)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-[var(--border)] disabled:hover:text-[var(--fg)]';
+  'inline-flex min-h-11 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--fg)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-[var(--border)] disabled:hover:text-[var(--fg)]';
 
 /**
  * Export + cross-device transfer hub. Section order is a product
- * requirement (task-9 brief): download first (the reliable path), then
+ * requirement: download first (the reliable path), then
  * subscription (with an honest refresh-interval warning and its
  * generate-link control disabled — no backend exists yet, so we never hand
  * out a fake URL), then reminder preference, then transfer.
@@ -67,7 +67,7 @@ export function CalendarPage() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-8 px-4 pb-16 pt-6">
       <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold text-[var(--fg)]">Calendar</h1>
+        <h1 className="text-2xl font-semibold leading-tight text-[var(--fg)]">Calendar</h1>
         <p className="text-sm text-[var(--fg-muted)]">
           {events.length === 0
             ? 'Nothing to export yet.'
@@ -104,7 +104,8 @@ export function CalendarPage() {
         )}
       </section>
 
-      {/* 2. Subscription — explained honestly, generate-link disabled (no backend yet, Task 12/13). */}
+      {/* 2. Subscription — explained honestly, generate-link disabled: this app
+          has no backend, so there is no URL to hand out and we never fake one. */}
       <section aria-labelledby="subscribe-heading" className="flex flex-col gap-2">
         {sectionHeading('subscribe-heading', 'Subscription link')}
         <p className="text-xs text-[var(--fg-muted)]">
@@ -139,9 +140,9 @@ export function CalendarPage() {
                 onClick={() => setReminderMinutes(m)}
                 className={[
                   'inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors',
-                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]',
+                  'focus-ring',
                   isSelected
-                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
+                    ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
                     : 'border-[var(--border)] text-[var(--fg-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
                 ].join(' ')}
               >

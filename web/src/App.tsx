@@ -25,7 +25,7 @@ import { ImportPage } from './routes/ImportPage';
 function NotFound() {
   return (
     <div className="mx-auto max-w-xl px-4 py-16 text-center">
-      <h1 className="text-lg font-semibold text-[var(--fg)]">Page not found</h1>
+      <h1 className="text-2xl font-semibold leading-tight text-[var(--fg)]">Page not found</h1>
       <p className="mt-2 text-sm text-[var(--fg-muted)]">
         That link doesn&rsquo;t match anything in the program. It may be mistyped, or point to an entry
         that has since changed.

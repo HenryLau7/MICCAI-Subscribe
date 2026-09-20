@@ -17,10 +17,7 @@ export function About() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-8 px-4 pb-16 pt-8">
       <header className="flex flex-col gap-3">
-        <h1 className="text-xl font-semibold text-[var(--fg)]">About</h1>
-        <p className="text-3xl font-semibold tracking-tight text-[var(--fg)] sm:text-4xl">
-          Less planning.<br />More MICCAI.
-        </p>
+        <h1 className="text-2xl font-semibold leading-tight text-[var(--fg)]">About</h1>
         <p className="text-sm leading-relaxed text-[var(--fg-muted)]">
           Find the research you care about, build your conference schedule, and take it with you.
           MICCAI Subscribe brings the MICCAI 2026 program into one searchable place — free to use,
@@ -35,7 +32,7 @@ export function About() {
         <div className="flex items-center gap-4">
           <div
             aria-hidden="true"
-            className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/10 text-lg font-semibold text-[var(--accent)]"
+            className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-lg font-semibold text-[var(--accent)]"
           >
             YL
           </div>
@@ -55,7 +52,7 @@ export function About() {
           href="https://www.yuanyeliu.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-medium text-[var(--accent)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]"
+          className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-medium text-[var(--accent)] underline underline-offset-4 focus-ring"
         >
           Visit my homepage <span aria-hidden="true">↗</span>
         </a>
@@ -76,7 +73,7 @@ export function About() {
           href={REPOSITORY}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-fg)] hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]"
+          className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-fg)] hover:opacity-90 focus-ring"
         >
           <span aria-hidden="true">★</span> Star on GitHub
         </a>
@@ -88,7 +85,10 @@ export function About() {
         >
           HenryLau7/MICCAI-Subscribe
         </a>
-        <figure className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)]">
+        {/* The img reserves its 800x533 box before it loads, so the fill has to
+            read as a surface waiting for content rather than as an empty hole —
+            on venue Wi-Fi that wait is long, and this chart is third-party. */}
+        <figure className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--bg-subtle)]">
           {chartFailed ? (
             <p className="p-5 text-sm text-[var(--fg-muted)]">
               The chart couldn&rsquo;t load. You can still view the project on Star History below.

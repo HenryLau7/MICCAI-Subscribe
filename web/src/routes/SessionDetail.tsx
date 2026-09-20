@@ -3,7 +3,8 @@ import { useProgram } from '../ui/ProgramContext';
 import { EmptyState } from '../ui/EmptyState';
 import { PresentationRow } from '../ui/PresentationRow';
 import { TypeBadge } from '../ui/TypeBadge';
-import { bySlot, formatDay, formatTime } from '../store/schedule';
+import { bySlot, formatTime } from '../store/schedule';
+import { formatDayLabel } from '../store/conference';
 
 export function SessionDetail() {
   const { program } = useProgram();
@@ -37,7 +38,9 @@ export function SessionDetail() {
         <TypeBadge type={session.kind} className="w-fit" />
         <h1 className="text-xl font-semibold leading-snug text-[var(--fg)]">{session.name}</h1>
         <p className="text-sm text-[var(--fg-muted)]">
-          {formatDay(session.start)} · {formatTime(session.start)}–{formatTime(session.end)}
+          <span className="font-semibold text-[var(--fg)]">
+            {formatDayLabel(session.start)} {formatTime(session.start)}–{formatTime(session.end)}
+          </span>
           {isPoster ? ' · hall not published — find the board number' : session.room ? ` · ${session.room}` : ''}
         </p>
         {session.chairs.length > 0 && (

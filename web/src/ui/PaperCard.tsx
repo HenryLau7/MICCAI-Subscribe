@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom';
 import type { Paper, Program } from '../data/types';
-import { formatDay, formatTime } from '../store/schedule';
+import { formatTime } from '../store/schedule';
+import { formatDayLabel } from '../store/conference';
 import { BookmarkButton } from './BookmarkButton';
+import { BoardNumber } from './BoardNumber';
 import { TypeBadge } from './TypeBadge';
 
 function AuthorLine({ paper }: { paper: Paper }) {
   const presenters = new Set(paper.presenters);
   return (
-    <p className="text-sm text-[var(--fg-muted)]">
+    <p className="mt-1.5 text-sm leading-relaxed text-[var(--fg-muted)]">
       {paper.authors.map((name, i) => (
         <span key={`${name}-${i}`}>
           {presenters.has(name) ? (
@@ -27,15 +29,17 @@ function AuthorLine({ paper }: { paper: Paper }) {
  * affiliation, board number, and every session it appears in with a bookmark
  * toggle per presentation. Poster sessions never show a room — the official
  * program doesn't publish poster hall names, so we say so instead of guessing.
+ *
+ * Depth is carried by fill, not by a second border: the per-presentation rows
+ * sit on --bg-subtle inside the card's --bg-elevated rather than drawing their
+ * own outline inside the card's, and take the smaller row radius. A border
+ * inside a border at the same weight reads as a rendering mistake.
  */
 export function PaperCard({ program, paper }: { program: Program; paper: Paper }) {
   return (
-    <article className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+    <article className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--bg-elevated)] p-4 shadow-[var(--shadow-card)]">
       <h3 className="text-base font-semibold leading-snug">
-        <Link
-          to={`/paper/${paper.id}`}
-          className="hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-        >
+        <Link to={`/paper/${paper.id}`} className="hover:text-[var(--accent)] focus-ring">
           {paper.title}
         </Link>
       </h3>
@@ -46,9 +50,7 @@ export function PaperCard({ program, paper }: { program: Program; paper: Paper }
           {paper.country ? ` · ${paper.country}` : ''}
         </p>
       )}
-      <p className="mt-2 text-xs text-[var(--fg-muted)]">
-        Board <span className="font-mono font-semibold text-[var(--fg)]">{paper.id}</span>
-      </p>
+      <BoardNumber id={paper.id} className="mt-2.5" />
       <ul className="mt-3 flex flex-col gap-2">
         {paper.presentationIds.map((pid) => {
           const presentation = program.byPresentationId.get(pid);
@@ -58,13 +60,16 @@ export function PaperCard({ program, paper }: { program: Program; paper: Paper }
           return (
             <li
               key={pid}
-              className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] px-3 py-2"
+              className="flex items-center justify-between gap-3 rounded-[var(--radius-row)] bg-[var(--bg-subtle)] px-3 py-2.5"
             >
               <div className="min-w-0">
                 <TypeBadge type={presentation.kind} />
-                <p className="mt-1 truncate text-sm font-medium text-[var(--fg)]">{session.name}</p>
-                <p className="text-xs text-[var(--fg-muted)]">
-                  {formatDay(session.start)} · {formatTime(session.start)}–{formatTime(session.end)}
+                <p className="mt-1.5 truncate text-sm font-medium text-[var(--fg)]">{session.name}</p>
+                <p className="mt-0.5 text-xs text-[var(--fg-muted)]">
+                  <span className="font-medium text-[var(--fg)]">
+                    {formatDayLabel(session.start)} {formatTime(session.start)}–
+                    {formatTime(session.end)}
+                  </span>
                   {isPoster
                     ? ' · hall not published — find the board number'
                     : session.room

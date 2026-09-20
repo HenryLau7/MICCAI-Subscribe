@@ -93,7 +93,7 @@ export function AuthorDetail() {
           Author identity here is just a name string — there are no ORCIDs and no disambiguation, so people who
           share this name cannot be told apart. Check the institutions below before assuming this is who you mean.
         </p>
-        <h1 className="text-xl font-semibold text-[var(--fg)]">{author.name}</h1>
+        <h1 className="text-xl font-semibold leading-snug text-[var(--fg)]">{author.name}</h1>
         {paperAffiliations.length > 0 && (
           <ul className="flex flex-col gap-0.5 text-sm text-[var(--fg-muted)]">
             {paperAffiliations.map((a) => (

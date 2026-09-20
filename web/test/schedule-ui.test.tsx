@@ -142,7 +142,7 @@ describe('ScheduleItemRow', () => {
   });
 
   it('wires the follow-source text to the exclude button as its accessible description', () => {
-    // Task 7 precedent (FollowButton): explanatory text next to a control
+    // Same rule as FollowButton: explanatory text next to a control
     // must be reachable via aria-describedby, not left as a bare sibling a
     // screen-reader user tabbing straight to the button would miss.
     renderRow(followItem());
@@ -210,7 +210,7 @@ describe('ScheduleItemRow', () => {
   });
 
   it("shows the row's activity-type badge with its own text label, for both a presentation and a satellite event", () => {
-    // §10.1 type-coding: colour is never the sole distinguishing means, so
+    // Type-coding rule: colour is never the sole distinguishing means, so
     // the text label (not just a colour swatch) must be genuinely present —
     // asserted here against the real fixture's actual kind, whichever of
     // oral/spotlight/poster PRESENTATION happens to be, not a guessed value.
@@ -363,7 +363,7 @@ describe('Schedule page', () => {
 
     // Positive: both rows are actually present. Without this, a bug that
     // dropped the bookmarked item from the schedule entirely (e.g. wrongly
-    // applying the exclusion check to a bookmark — the exact Task 4 bug
+    // applying the exclusion check to a bookmark — the exact earlier bug
     // collect() guards against) would leave every "absent" assertion below
     // vacuously true.
     const bookmarkedRow = within(panel).getByText(bookmarkedPaper.title).closest('li')!;

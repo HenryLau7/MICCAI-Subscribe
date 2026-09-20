@@ -41,9 +41,9 @@ export function FollowButton({ kind, id, label, hint }: FollowButtonProps) {
         aria-describedby={hint ? hintId : undefined}
         className={[
           'inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border px-4 text-sm font-medium transition-colors',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]',
+          'focus-ring',
           on
-            ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
+            ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
             : 'border-[var(--border)] text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
         ].join(' ')}
       >

@@ -58,12 +58,12 @@ export function SearchBox({ targetPath, autoFocus, placeholder, id = 'search' }:
         autoFocus={autoFocus}
         value={value}
         onChange={handleChange}
-        placeholder={placeholder ?? 'Search title, author, board number…'}
-        className="min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 text-base text-[var(--fg)] placeholder:text-[var(--fg-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        placeholder={placeholder ?? 'Search the program'}
+        className="min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3 text-base text-[var(--fg)] placeholder:text-[var(--fg-muted)] focus-ring"
       />
       <button
         type="submit"
-        className="inline-flex min-h-11 shrink-0 items-center rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-fg)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        className="inline-flex min-h-11 shrink-0 items-center rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-fg)] transition-opacity hover:opacity-90 focus-ring"
       >
         Search
       </button>

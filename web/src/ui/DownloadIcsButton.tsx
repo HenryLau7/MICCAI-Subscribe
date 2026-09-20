@@ -18,7 +18,7 @@ function download(events: IcsEvent[], filename: string, calendarName: string): v
 }
 
 /**
- * The primary export path (see task-9 brief: download comes before
+ * The primary export path (download comes before
  * subscription). Disabled with no events rather than producing an empty,
  * confusing .ics file.
  */
@@ -31,7 +31,7 @@ export function DownloadIcsButton({ events, filename, calendarName, className = 
       onClick={() => download(events, filename, calendarName)}
       className={[
         'inline-flex min-h-11 items-center rounded-lg border px-4 text-sm font-medium transition-colors',
-        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]',
+        'focus-ring',
         disabled
           ? 'cursor-not-allowed border-[var(--border)] text-[var(--fg-muted)]'
           : 'border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90',

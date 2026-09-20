@@ -21,8 +21,8 @@ import { TypeBadge, type ActivityType } from './TypeBadge';
  * `toggleExcluded` — `toggleExcluded` is a deliberate no-op on bookmarked
  * items, so an "exclude" control must never appear on a bookmarked row (it
  * would look broken, doing nothing on click). The "from your follow: X"
- * text is wired to the exclude button via aria-describedby (Task 7's
- * FollowButton precedent), not left as a bare sibling.
+ * text is wired to the exclude button via aria-describedby, the same way
+ * FollowButton.tsx wires its disambiguating hint, not left as a bare sibling.
  */
 export function ScheduleItemRow({ item }: { item: ScheduleItem }) {
   const { toggleExcluded } = useStore();
@@ -55,7 +55,7 @@ export function ScheduleItemRow({ item }: { item: ScheduleItem }) {
     titleNode = (
       <Link
         to={`/paper/${paper.id}`}
-        className="truncate text-sm font-medium text-[var(--fg)] hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        className="truncate text-sm font-medium text-[var(--fg)] hover:text-[var(--accent)] focus-ring"
       >
         {paper.title}
       </Link>
@@ -64,7 +64,7 @@ export function ScheduleItemRow({ item }: { item: ScheduleItem }) {
       <span className="text-xs text-[var(--fg-muted)]">
         <Link
           to={`/session/${session.id}`}
-          className="hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className="hover:text-[var(--accent)] focus-ring"
         >
           {session.name}
         </Link>
@@ -83,37 +83,40 @@ export function ScheduleItemRow({ item }: { item: ScheduleItem }) {
   }
 
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-3">
+    <li className="flex flex-col gap-2.5 rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--bg-elevated)] p-3.5 shadow-[var(--shadow-card)]">
+      {/* When, and what kind — the two things you scan a day for. The time
+          leads at full contrast: in a list of a day's commitments it is the
+          key you read first and the one you act on. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-semibold text-[var(--fg)]">{timeRange}</span>
+        <TypeBadge type={activityType} />
+        <ConflictBadge conflicts={item.conflicts} />
+      </div>
+
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold text-[var(--fg-muted)]">{timeRange}</p>
           <p className="truncate">{titleNode}</p>
-          {metaNode && <p className="truncate">{metaNode}</p>}
-          <p className="text-xs text-[var(--fg-muted)]">{locationText}</p>
+          {metaNode && <p className="mt-0.5 truncate">{metaNode}</p>}
+          <p className="mt-0.5 text-xs text-[var(--fg-muted)]">{locationText}</p>
         </div>
         <BookmarkButton presentationId={item.key} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <TypeBadge type={activityType} />
-        <ConflictBadge conflicts={item.conflicts} />
-        {isFollowDerived && (
+      {isFollowDerived && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-2.5">
           <span id={sourceLabelId} className="text-xs text-[var(--fg-muted)]">
             From your follow: {item.sourceLabel}
           </span>
-        )}
-      </div>
-
-      {isFollowDerived && (
-        <button
-          type="button"
-          onClick={() => toggleExcluded(item.key)}
-          aria-label="Exclude from schedule"
-          aria-describedby={sourceLabelId}
-          className="inline-flex min-h-11 w-fit items-center rounded-lg border border-[var(--border)] px-3 text-xs font-medium text-[var(--fg-muted)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-        >
-          Exclude from schedule
-        </button>
+          <button
+            type="button"
+            onClick={() => toggleExcluded(item.key)}
+            aria-label="Exclude from schedule"
+            aria-describedby={sourceLabelId}
+            className="focus-ring ml-auto inline-flex min-h-11 items-center rounded-[var(--radius-row)] border border-[var(--border)] px-3 text-xs font-medium text-[var(--fg-muted)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            Exclude from schedule
+          </button>
+        </div>
       )}
     </li>
   );

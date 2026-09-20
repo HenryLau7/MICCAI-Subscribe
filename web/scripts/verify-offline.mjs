@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Offline verification for the MICCAI Subscribe PWA (Task 12 / Ruling B).
+ * Offline verification for the MICCAI Subscribe PWA.
  *
  * This is a deployment/manual check, NOT part of `npm test` — it needs a
  * real built app, a real `vite preview` server, and a real browser with
@@ -21,7 +21,7 @@
  *      page: asserts `miccai-program-v1` (owned by src/data/load.ts)
  *      contains only /data/program.min.json, and the Workbox precache
  *      bucket contains the app shell and nothing named "program" or
- *      ending in .json — the live-browser half of the Ruling B guard that
+ *      ending in .json — the live-browser half of the single-writer guard that
  *      test/pwa.test.ts checks statically against the build output.
  *   4. Flips the browser to offline via
  *      `Network.emulateNetworkConditions({ offline: true, ... })` — actual
@@ -287,7 +287,7 @@ async function main() {
     );
     record('service worker reaches "activated" after first online load', swActivated);
 
-    // --- 2. Inspect Cache Storage split (live, in-browser half of Ruling B) ---
+    // --- 2. Inspect Cache Storage split (live half of the single-writer rule) ---
     // Both buckets are populated inside the SW's install-event waitUntil()
     // (Workbox precache) and inside load.ts's async loadProgram() call
     // (miccai-program-v1), which can each still be finishing their

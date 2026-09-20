@@ -6,7 +6,8 @@ import { DownloadIcsButton } from '../ui/DownloadIcsButton';
 import { ShareIcsButton } from '../ui/ShareIcsButton';
 import { TypeBadge } from '../ui/TypeBadge';
 import { googleCalendarUrl } from '../calendar/google';
-import { formatDay, formatTime } from '../store/schedule';
+import { formatTime } from '../store/schedule';
+import { formatDayLabel } from '../store/conference';
 import type { IcsEvent } from '../calendar/ics';
 import type { SatelliteEvent } from '../data/types';
 
@@ -71,7 +72,11 @@ export function SatelliteDetail() {
         </div>
         {event.theme && <p className="text-sm text-[var(--fg-muted)]">Theme: {event.theme}</p>}
         <p className="text-sm text-[var(--fg-muted)]">
-          {formatDay(event.start)} · {formatTime(event.start)}–{formatTime(event.end)} · {event.room}
+          <span className="font-semibold text-[var(--fg)]">
+            {formatDayLabel(event.start)} {formatTime(event.start)}–{formatTime(event.end)}
+          </span>
+          {' · '}
+          {event.room}
           {event.floor ? ` (floor ${event.floor})` : ''}
         </p>
         {event.url && (
@@ -79,7 +84,7 @@ export function SatelliteDetail() {
             href={event.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex w-fit min-h-11 items-center rounded-lg border border-[var(--accent)] px-4 text-sm font-medium text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="inline-flex w-fit min-h-11 items-center rounded-lg border border-[var(--accent)] px-4 text-sm font-medium text-[var(--accent)] focus-ring"
           >
             Visit organizer website
           </a>
@@ -101,7 +106,7 @@ export function SatelliteDetail() {
             href={googleCalendarUrl(icsEvent)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex min-h-11 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="inline-flex min-h-11 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)] focus-ring"
           >
             Google Calendar
           </a>

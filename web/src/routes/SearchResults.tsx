@@ -6,6 +6,7 @@ import { SearchBox } from '../ui/SearchBox';
 import { PaperCard } from '../ui/PaperCard';
 import { SatelliteCard } from '../ui/SatelliteCard';
 import { EmptyState } from '../ui/EmptyState';
+import { IconNoResults, IconSearch } from '../ui/icons';
 
 const RESULT_LIMIT = 50;
 
@@ -40,7 +41,7 @@ export function SearchResults() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-16 pt-6">
       <h1 className="sr-only">Search results</h1>
-      <SearchBox placeholder="Search title, author, board number…" />
+      <SearchBox placeholder="Search the program" />
       <p className="text-xs text-[var(--fg-muted)]">
         Matches are substrings, so short or common terms can be noisy. Try a full name or the board number
         (e.g. M-PM-001) to narrow it down.
@@ -48,11 +49,13 @@ export function SearchResults() {
 
       {!query.trim() ? (
         <EmptyState
+          icon={<IconSearch />}
           title="Enter a search term"
           description="Type a paper title, author, institution, or board number, then press Search."
         />
       ) : results.length === 0 ? (
         <EmptyState
+          icon={<IconNoResults />}
           title={`No results for “${query}”`}
           description="Check the spelling, try fewer words, or search by board number."
         />

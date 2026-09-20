@@ -49,7 +49,7 @@ function AuthorList({ paper }: { paper: Paper }) {
           <Link
             to={`/author/${slug}`}
             className={[
-              'hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]',
+              'hover:text-[var(--accent)] focus-ring',
               presenters.has(name) ? 'font-semibold text-[var(--fg)]' : '',
             ].join(' ')}
           >
@@ -105,7 +105,7 @@ export function PaperDetail() {
             {paper.affiliationKey ? (
               <Link
                 to={`/affiliation/${paper.affiliationKey}`}
-                className="hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                className="hover:text-[var(--accent)] focus-ring"
               >
                 {paper.affiliation}
               </Link>
@@ -143,7 +143,7 @@ export function PaperDetail() {
                 href={googleCalendarUrl(event)}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-11 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                className="inline-flex min-h-11 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)] focus-ring"
               >
                 Google Calendar: {event.summary}
               </a>
@@ -151,7 +151,7 @@ export function PaperDetail() {
             <button
               type="button"
               onClick={() => downloadIcs(events, paper)}
-              className="inline-flex min-h-11 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              className="inline-flex min-h-11 items-center rounded-lg border border-[var(--border)] px-4 text-sm font-medium text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)] focus-ring"
             >
               Download .ics
             </button>

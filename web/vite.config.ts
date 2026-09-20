@@ -14,7 +14,8 @@ export default defineConfig({
       // easy to unit-test as plain JSON) and link it ourselves in index.html.
       manifest: false,
       workbox: {
-        // App-shell only: JS/CSS/HTML/fonts/icons. Ruling B — src/data/load.ts
+        // App-shell only: JS/CSS/HTML/fonts/icons. One writer per cache:
+        // src/data/load.ts
         // already owns a hand-rolled stale-while-revalidate cache for
         // /data/program.min.json under the "miccai-program-v1" Cache Storage
         // bucket. A second writer (Workbox precache or runtimeCaching) to

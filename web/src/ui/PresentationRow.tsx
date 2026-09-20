@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import type { Presentation, Program } from '../data/types';
-import { formatDay, formatTime, slotLabel } from '../store/schedule';
+import { formatTime, slotLabel } from '../store/schedule';
+import { formatDayLabel } from '../store/conference';
+import { BoardNumber } from './BoardNumber';
 import { BookmarkButton } from './BookmarkButton';
 import { TypeBadge } from './TypeBadge';
 
@@ -30,7 +32,7 @@ export function PresentationRow({ program, presentation, showPaper }: Presentati
   const isPoster = session.kind === 'poster';
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] px-3 py-2">
+    <li className="flex items-center justify-between gap-3 rounded-[var(--radius-row)] bg-[var(--bg-subtle)] px-3 py-2.5">
       <div className="min-w-0">
         <TypeBadge type={presentation.kind} className="mb-1" />
         {showPaper ? (
@@ -38,7 +40,7 @@ export function PresentationRow({ program, presentation, showPaper }: Presentati
             <p className="truncate text-sm font-medium text-[var(--fg)]">
               <Link
                 to={`/paper/${paper.id}`}
-                className="hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                className="hover:text-[var(--accent)] focus-ring"
               >
                 {paper.title}
               </Link>
@@ -46,23 +48,23 @@ export function PresentationRow({ program, presentation, showPaper }: Presentati
             <p className="truncate text-xs text-[var(--fg-muted)]">
               {(paper.presenters.length > 0 ? paper.presenters : paper.authors).join(', ')}
             </p>
-            <p className="text-xs text-[var(--fg-muted)]">
-              Board <span className="font-mono font-semibold text-[var(--fg)]">{paper.id}</span>
-            </p>
+            <BoardNumber id={paper.id} className="mt-1" />
           </>
         ) : (
           <p className="truncate text-sm font-medium text-[var(--fg)]">
             <Link
               to={`/session/${session.id}`}
-              className="hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              className="hover:text-[var(--accent)] focus-ring"
             >
               {session.name}
             </Link>
           </p>
         )}
-        <p className="text-xs text-[var(--fg-muted)]">
+        <p className="mt-1 text-xs text-[var(--fg-muted)]">
           {slotLabel(presentation) ? `${slotLabel(presentation)} · ` : ''}
-          {formatDay(session.start)} · {formatTime(session.start)}–{formatTime(session.end)}
+          <span className="font-medium text-[var(--fg)]">
+            {formatDayLabel(session.start)} {formatTime(session.start)}–{formatTime(session.end)}
+          </span>
           {isPoster
             ? ' · hall not published — find the board number'
             : session.room

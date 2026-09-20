@@ -14,8 +14,7 @@ const TYPE_LABEL: Record<ActivityType, string> = {
 
 /**
  * Colour groups, not six distinct hues. Six mutually-distinguishable AND
- * AA-legible hues were tried first (see task-11-report.md for the full
- * palette-design trail): the exclusion zones needed to stay clear of the
+ * AA-legible hues were tried first: the exclusion zones needed to stay clear of the
  * existing accent/danger/warning hues leave only a ~150° arc of the wheel
  * to work with, which crowds four of the six into a green-to-teal cluster.
  * Measured under a standard protanopia/deuteranopia simulation, several of

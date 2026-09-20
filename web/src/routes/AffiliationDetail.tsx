@@ -32,7 +32,7 @@ export function AffiliationDetail() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6 px-4 pb-16 pt-6">
       <header className="flex flex-col gap-3">
-        <h1 className="text-xl font-semibold text-[var(--fg)]">{affiliation.name}</h1>
+        <h1 className="text-xl font-semibold leading-snug text-[var(--fg)]">{affiliation.name}</h1>
         <p className="text-sm text-[var(--fg-muted)]">
           {affiliation.country ? `${affiliation.country} · ` : ''}
           {papers.length} paper{papers.length === 1 ? '' : 's'}

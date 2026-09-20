@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react';
 import { useProgram } from '../ui/ProgramContext';
 import { SatelliteCard } from '../ui/SatelliteCard';
 import { EmptyState } from '../ui/EmptyState';
+import { IconFilter } from '../ui/icons';
 import { formatTime } from '../store/schedule';
 import { useRovingTabList } from '../ui/useRovingTabList';
 import type { SatelliteEvent, SatelliteType } from '../data/types';
@@ -71,8 +72,8 @@ function eventsStartingAt(room: string, slot: { start: string }, events: Satelli
 }
 
 const buttonBase =
-  'inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]';
-const buttonOn = 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]';
+  'inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors focus-ring';
+const buttonOn = 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]';
 const buttonOff = 'border-[var(--border)] text-[var(--fg-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]';
 
 /**
@@ -138,7 +139,7 @@ export function Satellite() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-16 pt-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold text-[var(--fg)]">Satellite events</h1>
+        <h1 className="text-2xl font-semibold leading-tight text-[var(--fg)]">Satellite events</h1>
         <p className="text-xs text-[var(--fg-muted)]">
           Workshops, challenges and tutorials run the two bookend days of the conference. Each event&rsquo;s own
           paper list is published by its organizers on their own website — this site covers activity-level
@@ -221,7 +222,7 @@ export function Satellite() {
           id={themeSelectId}
           value={theme}
           onChange={(e) => setTheme(e.target.value)}
-          className="min-h-11 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] px-3 text-sm text-[var(--fg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className="min-h-11 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] px-3 text-sm text-[var(--fg)] focus-ring"
         >
           <option value="all">All themes</option>
           {themeOptions.map((t) => (
@@ -240,6 +241,7 @@ export function Satellite() {
       >
         {filtered.length === 0 ? (
           <EmptyState
+            icon={<IconFilter />}
             title="No satellite events match these filters"
             description="Try a different day, type, or theme."
           />
