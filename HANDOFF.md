@@ -1,8 +1,12 @@
 # MICCAI Subscribe — Handoff
 
 **Written:** 2026-09-20 · **Ships:** 2026-09-27 (satellite events) / 2026-09-28 (main conference) — **7 days**
-**Branch:** `feat/web-app`, 30 commits on `main` @ `4ed5122`, HEAD `c0e3189`, working tree clean
-**State:** 13 of 14 tasks complete · 1 deliberately cut · **final whole-branch review NOT done**
+**Branch:** `feat/web-app`, 32 commits on `main` @ `4ed5122`, HEAD `a2773c9`, working tree clean
+**State:** 13 of 14 tasks complete · 1 deliberately cut · **final whole-branch review DONE — verdict: ship with fixes, and the fixes are in**
+
+> **What is left is the four human-only steps in §4.3.** No code task remains. The most
+> important of them is importing the generated `.ics` into a real calendar client: it is the
+> last undischarged obligation and no test can substitute for it.
 
 ---
 
@@ -22,24 +26,38 @@ Ships to Cloudflare Pages. **Nothing has been deployed** — that is the user's 
 
 | | |
 |---|---|
-| Tests | **174/174**, 18 files, green under Europe/Paris, Asia/Shanghai, America/Los_Angeles, Pacific/Kiritimati |
+| Tests | **193/193**, 19 files, green under Europe/Paris, Asia/Shanghai, America/Los_Angeles, Pacific/Kiritimati |
 | Typecheck | `npx tsc -b` clean — **covers `src/` and `test/`** |
 | Lint | `npm run lint` (oxlint) clean |
-| Bundle | **102.51 KB gzip** (97.95 JS + 4.56 CSS) against a 150 KB budget |
+| Bundle | **102.90 KB gzip** (98.34 JS + 4.56 CSS) against a 150 KB budget |
 | Service worker | ~6.1 KB gzip, separate |
 | Offline gate | `node web/scripts/verify-offline.mjs` → **11/11** |
 | Data | 1165 papers · 1318 presentations · 23 sessions · 111 satellite events |
 
 ## 4. What is NOT done
 
-### 4.1 The final whole-branch review never ran
-It was dispatched twice and killed both times by spend limits. **This is the top remaining task.** Its purpose is what task-scoped reviews structurally could not see:
-- cross-task integration seams — especially the presentation-id rule (`paperId` vs `` `${paperId}:oral` ``) used across decode / schedule / calendar / UI, the `StoredState` shape flowing storage → provider → schedule → calendar → transfer, and timezone handling;
-- **triaging the 30 deferred items** in `.superpowers/sdd/2026-09-19-miccai-subscribe-web-app/deferred-items.md` into fix-now / fix-later / drop;
-- an honesty audit of the shipped UI;
-- a ship-or-not judgment.
+### 4.1 The final whole-branch review — DONE
+It ran on 2026-09-20 and returned **ship with fixes**. It found no structural problems: every
+issue was a leaf-level string or a four-line predicate, which is the right outcome for a branch
+whose seams had never been reviewed together. All eight must-fix items are fixed in `a2773c9`;
+the full reasoning is in that commit message and in `progress.md`.
 
-A ready-to-use package is at `.superpowers/sdd/.../review-FINAL.diff`. **Do not feed the whole diff to one agent** — it is 339 KB. Since the branch creates the app from nothing, reading current files beats reading the diff.
+The two worth knowing about:
+- Two bookmarked **talks in the same session** rendered a red "Time conflict". The same-session
+  escape hatch was gated on both items being posters. 9 of the 18 oral sessions hold 6 orals +
+  6 spotlights in one 90-minute window, so it fired on the most common user action — and made
+  `/schedule` contradict the `.ics`, which correctly merges those two items into one event.
+- `About`'s Privacy section described generating a calendar subscription link as the only way
+  data leaves your device. That control ships **disabled** (Task 13 was cut), so the one place
+  the UI described itself, it described a feature that does not exist.
+
+Seams the review checked and found **sound** — do not re-audit these: the presentation-id rule
+(`:oral` appears in exactly two places in the tree; no consumer parses an id), the `StoredState`
+flow through storage → provider → schedule → calendar → transfer, and timezone handling end to
+end (and it empirically proved the TZ tests are not tautological). Details in `progress.md`.
+
+All 30 deferred items are triaged in `deferred-items.md`: 3 fixed, 11 dropped, 8 real but not
+launch-blocking, 5 of 6 CARRY INTO obligations verified discharged in code.
 
 ### 4.2 Task 13 was cut, deliberately
 The Cloudflare Worker + KV cross-device sync and subscription feed. The plan's own cut-list named it first. The product degrades **honestly**: the calendar page ships its generate-link control disabled and labelled "not yet available", beside a warning that calendar apps may refresh only daily. Download `.ics` — the primary, recommended path — is complete and works offline; cross-device movement is served by the `/import` transfer link.
@@ -67,7 +85,9 @@ These are in `docs/RUNBOOK.md` §6 as a pre-launch checklist. None can be faked:
 
 - **Ruling B** — Workbox must **never** precache or runtime-cache `program.min.json`. `web/src/data/load.ts` owns the `miccai-program-v1` cache with hand-written stale-while-revalidate. Two writers to one bucket means a stale program served after a refresh, invisible until the conference. There is a regression test; `verify-offline.mjs` confirms the split at runtime.
 - **Ruling D6 (from SPEC)** — one calendar event per **session**, not per talk. The PDF publishes no per-talk times; dividing a 90-minute session by twelve would fabricate times and make someone miss a talk.
-- **Conflict tiering** — `same-poster-session` is **not** a warning and must never use the word "conflict". Five posters in one two-hour session are five easy walks; calling that a conflict trains users to ignore the badge.
+- **Conflict tiering** — nothing inside a *single session* is a conflict, for posters or for talks. Five posters in one two-hour session are five easy walks; two talks in one oral session are one room and one seat. `same-poster-session` is **not** a warning and must never use the word "conflict"; two talks in the same session get no badge at all. Calling either a conflict trains users to ignore the badge. (The talks half of this was a live bug until `a2773c9` — it fired on the most common user action.)
+- **A bookmark that stops resolving must be reported, never dropped** (new, from the final review). The schedule is TENTATIVE and refreshed daily, so a saved talk can be withdrawn out from under the user. `unresolvedBookmarks()` feeds a banner on `/schedule`. We cannot recover the item — the min bundle carries no `title_key` — but silently deleting someone's saved talk mid-conference is the one way this app can destroy data. Do not "clean up" the banner.
+- **The `crossorigin` attribute on the `index.html` preload is load-bearing.** `as="fetch"` must match `load.ts`'s fetch (mode cors, credentials same-origin). Without it the preload is a no-cors request, is never reused, and the 386 KB bundle downloads **twice**. Verified over CDP: exactly one parser-initiated request.
 - **Type colour-coding is three functional groups, not six hues.** Six were tried; a protanopia/deuteranopia simulation put 3 of 6 pairs 34–40 apart (of ~441). Text labels, not colour, are the real accessibility guarantee.
 - **Never invent data.** No abstracts, no paper URLs, no per-talk times, no poster hall name — the source has none. Empty renders as absent, never as a placeholder.
 - **Never overpromise calendar sync.** The strings "instant sync", "real-time sync", "syncs automatically" are banned from the calendar page.
@@ -105,8 +125,14 @@ TZ=Pacific/Kiritimati npx vitest run   # timezone independence
 
 ## 10. Suggested order for whoever picks this up
 
-1. Run the final whole-branch review (§4.1). Budget ~1 capable-model dispatch; scope it to seams and triage, not a re-read.
-2. Act on its "must fix before launch" list, if any.
-3. Hand the user the manual checklist (§4.3) — especially the calendar-client check, which is the one thing no test can substitute for.
-4. Deploy is theirs. Then run the two post-deploy verifications in §5.
+Steps 1 and 2 are **done** (final review ran; its eight must-fix items are fixed in `a2773c9`).
+What remains:
+
+1. ~~Run the final whole-branch review.~~ Done 2026-09-20 — see §4.1.
+2. ~~Act on its must-fix list.~~ Done — `a2773c9`.
+3. **The manual checklist (§4.3) is the user's.** Especially the calendar-client import, which is
+   the last undischarged obligation and the one thing no test can substitute for.
+4. **Deploy is theirs.** Then run the two post-deploy verifications in §5 — the `_headers`
+   `curl` check, and re-measure LCP against the live URL, throttled. The SPEC 7.1 preload is now
+   in place, so measure the version you intend to ship.
 5. `superpowers:finishing-a-development-branch` to integrate.
