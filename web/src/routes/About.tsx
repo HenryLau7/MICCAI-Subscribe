@@ -25,39 +25,6 @@ export function About() {
         </p>
       </header>
 
-      <section
-        aria-labelledby="developer-heading"
-        className="flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5 sm:p-6"
-      >
-        <div className="flex items-center gap-4">
-          <div
-            aria-hidden="true"
-            className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-lg font-semibold text-[var(--accent)]"
-          >
-            YL
-          </div>
-          <div>
-            <p className="text-xs font-medium text-[var(--fg-muted)]">Meet the developer</p>
-            <h2 id="developer-heading" className="mt-1 text-2xl font-semibold text-[var(--fg)]">
-              Yuanye Liu
-            </h2>
-          </div>
-        </div>
-        <p className="text-sm leading-relaxed text-[var(--fg-muted)]">
-          Hi, I&rsquo;m Yuanye, the developer behind MICCAI Subscribe. I built this tool to make
-          exploring the program and planning your time at MICCAI easier. Visit my homepage to
-          learn more about me and my work.
-        </p>
-        <a
-          href="https://www.yuanyeliu.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-medium text-[var(--accent)] underline underline-offset-4 focus-ring"
-        >
-          Visit my homepage <span aria-hidden="true">↗</span>
-        </a>
-      </section>
-
       <section aria-labelledby="support-heading" className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <h2 id="support-heading" className="text-lg font-semibold text-[var(--fg)]">
@@ -184,6 +151,23 @@ export function About() {
           The chart on this page loads from Star History, which receives your IP address and standard
           request information, but no saved schedule data. External links take you to sites with their
           own privacy policies.
+        </p>
+      </section>
+
+      <section aria-labelledby="developer-heading" className="flex flex-col gap-2">
+        <h2 id="developer-heading" className="text-sm font-semibold text-[var(--fg)]">
+          Developer
+        </h2>
+        <p className="text-sm text-[var(--fg-muted)]">
+          Yuanye Liu ·{' '}
+          <a
+            href="https://www.yuanyeliu.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--accent)] underline underline-offset-2 focus-ring"
+          >
+            Homepage <span aria-hidden="true">↗</span>
+          </a>
         </p>
       </section>
     </div>
