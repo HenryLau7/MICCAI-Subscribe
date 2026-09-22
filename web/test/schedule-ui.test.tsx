@@ -190,6 +190,23 @@ describe('ScheduleItemRow', () => {
     expect(screen.queryByText(/conflict/i)).not.toBeInTheDocument();
   });
 
+  it('keeps the paper link and the session link apart, each with its own tap area', () => {
+    // These two used to sit on consecutive lines 2px apart, so on a phone a tap
+    // aimed at one regularly landed on the other. The session is a chip on its
+    // own line now, with the unclickable location line between it and the
+    // title, and both links carry padding of their own rather than being a
+    // bare line of text.
+    renderRow(bookmarkedItem());
+    const title = screen.getByRole('link', { name: PAPER.title });
+    const session = screen.getByRole('link', { name: SESSION.name });
+    expect(title.className).toContain('py-1');
+    expect(session.className).toContain('min-h-9');
+    // Different lines, not two links sharing one: neither may contain the other,
+    // and they must not be siblings inside the same text block.
+    expect(title.contains(session)).toBe(false);
+    expect(title.parentElement!.contains(session)).toBe(false);
+  });
+
   it('shows the poster board number and states the hall is not published, never inventing a room', () => {
     const posterPresentation = program.presentations.find((p) => p.kind === 'poster')!;
     const posterPaper = program.byPaperId.get(posterPresentation.paperId)!;
