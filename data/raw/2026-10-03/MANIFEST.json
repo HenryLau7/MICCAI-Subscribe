@@ -1,12 +1,6 @@
 {
-  "conference": "MICCAI 2026",
-  "venue": "Strasbourg Convention Center, Strasbourg, France",
-  "timezone": "Europe/Paris",
-  "schema_version": 1,
-  "source_revision": "2026-09-10",
   "fetched_at": "2026-10-03T10:18:26.620037+00:00",
-  "generated_at": "2026-10-03T10:18:55+00:00",
-  "sources": {
+  "files": {
     "main-program.pdf": {
       "url": "https://conferences.miccai.org/2026/files/downloads/MICCAI2026-Main-Conference-Oral-and-Poster-Program.pdf",
       "bytes": 441904,
@@ -37,13 +31,5 @@
       "sha256": "68d9883d6df740680a6bb1e4a3dcf48b8e37f4b84f3c00d126bc992942424872",
       "etag": null
     }
-  },
-  "counts": {
-    "papers": 1165,
-    "presentations": 1318,
-    "sessions": 23,
-    "satellite": 110,
-    "authors": 5651,
-    "affiliations": 471
   }
 }
